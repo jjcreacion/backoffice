@@ -13,7 +13,6 @@ const nextConfig: NextConfig = {
   typescript: {
     // !! WARN !!
     // Permite builds de producción aunque hayan errores de TypeScript
-    // no es recomendado para producción real
     ignoreBuildErrors: true,
   },
 };

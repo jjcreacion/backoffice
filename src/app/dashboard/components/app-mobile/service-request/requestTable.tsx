@@ -45,6 +45,10 @@ interface StatusInfo {
   color: 'warning' | 'primary' | 'success' | 'error';
 }
 
+interface ServiceInfo {
+  label: string;
+}
+
 const statusMap: { [key: number]: StatusInfo } = {
   0: { label: 'Pending', color: 'warning' },
   1: { label: 'In Progress', color: 'primary' },
@@ -52,7 +56,8 @@ const statusMap: { [key: number]: StatusInfo } = {
   3: { label: 'Cancelled', color: 'error' },
 };
 
-const SERVICES: { [key: number] } = {
+//CORREGIDO: Agregada la anotación de tipo completa
+const SERVICES: { [key: number]: ServiceInfo } = {
   1: { label: 'Insurance Claim' },
   2: { label: 'Roofing' },
   3: { label: 'HVAC' },
@@ -65,8 +70,6 @@ const SERVICES: { [key: number] } = {
   10: { label: 'Tax Services' },
   11: { label: 'Other' },
 };
-
-const label = { inputProps: { 'aria-label': 'Switch demo' } };
 
 const RequestTable: React.FC<RequestServiceTableProps> = ({
   requests,
@@ -90,6 +93,7 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
       ?.toLowerCase()
       ?.includes(lowerCaseSearch);
   });
+  
   console.log('requests prop recibida en RequestTable:', requests);
 
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -112,9 +116,9 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
     setConfirmDeleteOpen(true);
   };
 
-  const getServiceTitle = (serviceCode: number): string | undefined => {
-    const service = SERVICES.find((s) => s.codigo === serviceCode);
-    return service?.title;
+  // CORREGIDO: Función que no se usaba pero estaba mal tipada
+  const getServiceLabel = (serviceType: number): string => {
+    return SERVICES[serviceType]?.label || 'Unknown Service';
   };
 
   const paginatedRequestService = sortedRequestService.slice(
@@ -155,7 +159,8 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
           {paginatedRequestService.map((requestService) => (
             <TableRow key={requestService.requestId}>
               <TableCell>
-                {SERVICES[requestService.serviceType].label}
+                {/* CORREGIDO: Agregada verificación de existencia */}
+                {SERVICES[requestService.serviceType]?.label || 'Unknown Service'}
               </TableCell>
 
               <TableCell>
@@ -164,10 +169,10 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
                   passHref
                 >
                   <Chip
-                    label={requestService.fkUser?.email}
+                    label={requestService.fkUser?.email || 'No email'}
                     clickable
                     size="small"
-                    color="black"
+                    color="primary"
                     variant="outlined"
                     sx={{ borderRadius: '5px' }}
                   />
@@ -186,7 +191,10 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
                 )}
               </TableCell>
               <TableCell>
-                {new Date(requestService.createdAt!).toLocaleDateString()}
+                {requestService.createdAt 
+                  ? new Date(requestService.createdAt).toLocaleDateString()
+                  : 'No date'
+                }
               </TableCell>
               <TableCell>
                 <IconButton
