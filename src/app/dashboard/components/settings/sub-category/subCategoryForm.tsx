@@ -16,8 +16,8 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { subCategory } from '../../../interface/subCategoryData';
-import { Category } from '../../../interface/category';
+import { subCategory } from '../../../../interface/subCategoryData';
+import { Category } from '../../../../interface/category';
 
 interface SubCategoryFormProps {
   open: boolean;

@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { Edit, Visibility, Delete} from '@mui/icons-material';
 import AddchartIcon from '@mui/icons-material/Addchart';
-import { Service } from '../../interface/serviceData';
+import { Service } from '../../../../interface/serviceData';
 import { visuallyHidden } from '@mui/utils';
 import { ChangeEvent, MouseEvent, useState } from 'react';
 

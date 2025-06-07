@@ -18,7 +18,7 @@ import {
   Button,
 } from '@mui/material';
 import { FaEdit, FaTrash, FaEye } from 'react-icons/fa';
-import { subCategory } from '../../../interface/subCategoryData';
+import { subCategory } from '../../../../interface/subCategoryData';
 import { ChangeEvent, MouseEvent, useState } from 'react';
 
 interface SubCategoryTableProps {
