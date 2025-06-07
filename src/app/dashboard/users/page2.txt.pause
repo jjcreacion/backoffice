@@ -1,4 +1,3 @@
-"use client";
 import React, { useState } from "react";
 import {
   Box,
@@ -35,6 +34,7 @@ const DataTableWithModal = () => {
     role: "",
     status: "",
   });
+  
   const [data, setData] = useState([
     { id: 1, name: "John Doe", email: "john@example.com", role: "Developer", status: "Active" },
     { id: 2, name: "Jane Smith", email: "jane@example.com", role: "Designer", status: "Inactive" },
@@ -43,22 +43,22 @@ const DataTableWithModal = () => {
     { id: 5, name: "Tom Brown", email: "tom@example.com", role: "Designer", status: "Inactive" },
   ]);
 
-  const handleSort = (property) => {
+  const handleSort = (property: any) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (event: any, newPage: any) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = (event: any) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const handleSearch = (event) => {
+  const handleSearch = (event: any) => {
     setSearchQuery(event.target.value);
     setPage(0);
   };
@@ -69,7 +69,7 @@ const DataTableWithModal = () => {
     setFormData({ name: "", email: "", role: "", status: "" });
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -81,7 +81,7 @@ const DataTableWithModal = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: any) => {
     if (window.confirm("Are you sure you want to delete this record?")) {
       setData(data.filter((item) => item.id !== id));
     }
@@ -95,7 +95,7 @@ const DataTableWithModal = () => {
       item.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const sortedData = filteredData.sort((a, b) => {
+  const sortedData = filteredData.sort((a: any, b: any) => {
     if (order === "asc") {
       return a[orderBy] < b[orderBy] ? -1 : 1;
     } else {
@@ -139,7 +139,6 @@ const DataTableWithModal = () => {
                   ) : (
                     <TableSortLabel
                       active={orderBy === header}
-                      direction={orderBy === header ? order : "asc"}
                       onClick={() => handleSort(header)}
                     >
                       {header.charAt(0).toUpperCase() + header.slice(1)}

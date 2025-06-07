@@ -128,7 +128,7 @@ const StyledListItemButton = styled(ListItemButton, {
   }),
   '&:hover': {
     backgroundColor: theme.palette.primary.main,
-    transform: 'translateX(10spx)',
+    transform: 'translateX(10px)',
     '& .MuiListItemIcon-root': {
       color: theme.palette.text.primary,
     },

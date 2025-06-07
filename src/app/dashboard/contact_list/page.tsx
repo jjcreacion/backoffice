@@ -22,6 +22,7 @@ import {
   Chip, 
 } from '@mui/material';
 import Link from 'next/link';
+import axios from 'axios';
 
 interface Contact {
   pkContact: number;
@@ -64,15 +65,17 @@ const FormPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://localhost:12099/Contact/findAll`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: Contact[] = await response.json();
+        const response = await axios.get(`${baseUrl}:${port}/Contact/findAll`);
+        const data: Contact[] = response.data; 
         setContacts(data);
       } catch (e: any) {
-        setError('Failed to fetch contacts.');
-        console.error('Error fetching contacts:', e);
+        if (axios.isAxiosError(e) && e.response) {
+          setError(`Failed to fetch contacts: ${e.response.status} - ${e.response.statusText}`);
+          console.error('Error fetching contacts:', e.response.data); 
+        } else {
+          setError('Failed to fetch contacts. Network error or unexpected problem.');
+          console.error('Error fetching contacts:', e);
+        }
       } finally {
         setLoading(false);
       }
@@ -94,13 +97,12 @@ const FormPage = () => {
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
         <Button variant="contained">Actions</Button>
         <Button variant="contained">Skip Tracer</Button>
-        <Button variant="contained">Actios Plan</Button>
+        <Button variant="contained">Action Plan</Button>
       </Box>
 
       <Divider sx={{ my: 3 }} />
 
       <Grid container spacing={3}>
-        {/* Columna izquierda - Contenido principal */}
         <Grid item xs={12} md={12}>
           <TableContainer component={Paper} sx={{ mb: 3 }}>
             <Table>
@@ -117,34 +119,35 @@ const FormPage = () => {
                 {contacts.map((contact) => (
                   <TableRow key={contact.pkContact}>
                     <TableCell>
-                        <Link href={`http://localhost:12100/dashboard/contact_detail/`} passHref>
-                          <Chip
-                            component="a"
-                            label={`${contact.person?.firstName || ''} ${contact.person?.middleName ? `${contact.person?.middleName} ` : ''}${contact.person?.lastName || ''}`}
-                            clickable
-                            size="small"
-                            color="primary" 
-                          />
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        {contact.person?.emails?.find((email) => email?.isPrimary === 1)?.email || 'No primary email'}
-                      </TableCell>
-                      <TableCell>
-                        {contact.entry === 1 ? (
-                          <Chip label="App Mbile" color="primary" size="small" />
-                        ) : (
-                          contact.entry
-                        )}
-                      </TableCell>
-                      <TableCell>{contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
-                      <TableCell>
-                        {contact.status === 1 ? (
-                          <Chip label="Active" color="secondary" size="small" />
-                        ) : (
-                           <Chip label="Inactive" color="red" size="small" />
-                        )}
-                      </TableCell>
+                      <Link href={`/dashboard/contact_detail/${contact.pkContact}`}>
+                        <Chip
+                          label={`${contact.person?.firstName || ''} ${contact.person?.middleName ? `${contact.person?.middleName} ` : ''}${contact.person?.lastName || ''}`}
+                          clickable
+                          size="small"
+                          color="primary" 
+                        />
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      {contact.person?.emails?.find((email) => email?.isPrimary === 1)?.email || 'No primary email'}
+                    </TableCell>
+                    <TableCell>
+                      {contact.entry === 1 ? (
+                        <Chip label="App Mobile" color="primary" size="small" />
+                      ) : (
+                        contact.entry
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      {contact.status === 1 ? (
+                        <Chip label="Active" color="secondary" size="small" />
+                      ) : (
+                        <Chip label="Inactive" color="warning" size="small" />
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

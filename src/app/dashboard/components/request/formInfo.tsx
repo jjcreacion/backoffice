@@ -42,7 +42,8 @@ import CircularProgress from '@mui/joy/CircularProgress';
 import {Category, SubCategory} from "@interfaces/category";
 
 
-
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+const port = process.env.NEXT_PUBLIC_PORT;
 
 
 interface FormRequestProps{
@@ -58,7 +59,9 @@ type Addon = {
     total: string;
 };
 export const RequestForm: React.FC<FormRequestProps> = ({ open,  idRequest, typeForm }) => {
-    const urlEndpoint = 'http://localhost:12099/request/forTableList'
+    
+    const urlEndpoint = `${baseUrl}:${port}/request/forTableList`
+    // const urlEndpoint = 'http://localhost:12099/request/forTableList'
     const [request, setRequests] = useState([]);
     const [close, setClose] = useState(true);
     const [loading, setLoading] = useState(true);

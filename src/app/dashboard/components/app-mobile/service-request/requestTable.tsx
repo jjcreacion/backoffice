@@ -62,7 +62,6 @@ const SERVICES: { [key: number] } = {
    10: { label: 'Tax Services' },
    11: { label: 'Other' },
 };
-``
 
 const label = { inputProps: { 'aria-label': 'Switch demo' } };
 
@@ -79,6 +78,9 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
   handleChangeRowsPerPage,
  searchQuery,
 }) => {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const port = process.env.NEXT_PUBLIC_PORT;
+
   const filteredRequestService = requests.filter((requestService) => {
     const lowerCaseSearch = searchQuery.toLowerCase();
     return (
@@ -119,7 +121,7 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
       <Table>
         <TableHead>
           <TableRow>
-            {['Request Type', 'User', 'Address', 'Status', 'Date', '`Info.'].map((header) => (
+            {['Request Type', 'User', 'Address', 'Status', 'Date', 'Info.'].map((header) => (
               <TableCell key={header}>
                 {header === 'Actions' ? (
                   'Actions'
@@ -142,9 +144,8 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
               <TableCell>{SERVICES[requestService.serviceType].label}</TableCell>
       
              <TableCell>
-              <Link href={`http://localhost:12100/dashboard/contact_detail/`} passHref>
+              <Link href={`${baseUrl}:${port}/dashboard/contact_detail/`} passHref>
                 <Chip
-                  component="a"
                   label={requestService.fkUser?.email}
                   clickable
                   size="small"

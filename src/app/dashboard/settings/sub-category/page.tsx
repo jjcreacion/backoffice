@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { FaSearch } from 'react-icons/fa';
 import { SubCategoryTable, SubCategoryForm } from '../../components/settings/sub-category';
-import { subCategory } from '../../interface/subCategoryData';
+import { subCategory } from '../../../interface/subCategoryData';
 import { ChangeEvent, MouseEvent } from 'react';
 import PageContent from '../../components/dashboard/pageContent';
 import GlassCard from '../../components/dashboard/glassCard';

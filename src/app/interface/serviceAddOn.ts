@@ -1,4 +1,4 @@
-interface ServiceAddOn {
+export interface ServiceAddOn {
     pkAddon: number;
     isReail: number;
     name: string;

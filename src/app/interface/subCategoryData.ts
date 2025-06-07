@@ -3,8 +3,6 @@ export interface subCategory {
     name: string;
     description: string;
     status: number;
-    createdAt: null;
-    updatedAt: string;
     fkCategory: string;
     fk_category: string;
     category: Category;

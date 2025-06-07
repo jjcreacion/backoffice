@@ -71,74 +71,76 @@ const LoginPage = () => {
   };
 
   return (
-    <BackgroundContainer>
-      <Container maxWidth="sm">
-        <StyledCard>
-          <CardContent sx={{ p: 4 }}>
-            <Box component="form" noValidate onSubmit={(e) => e.preventDefault()}>
-            <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <img src={"/images/icon-tnb.png"} alt="Login Image" style={{ maxWidth: '70px', marginBottom: '1rem' }} />
-              <Typography variant="h4" component="h1" sx={{ color: "#36454F", fontWeight: "bold" }}>
-                Welcome Back
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
-                Please sign in to continue
-              </Typography>
-            </Box>
+   <BackgroundContainer>
+  <Container maxWidth="sm">
+    <StyledCard>
+      <CardContent sx={{ p: 4 }}>
+        {/* Header FUERA del form */}
+        <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <img src={"/images/icon-tnb.png"} alt="Login Image" style={{ maxWidth: '70px', marginBottom: '1rem' }} />
+          <Typography variant="h4" component="h1" sx={{ color: "#36454F", fontWeight: "bold" }}>
+            Welcome Back
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
+            Please sign in to continue
+          </Typography>
+        </Box>
 
-              <TextField
-                fullWidth
-                margin="normal"
-                required
-                id="email"
-                label="Email Address / Phone / Username"
-                name="email"
-                autoComplete="email"
-                onChange={(e) => setEmail(e.target.value)}
-                autoFocus
-                value={email}
-              />
+        {/* Form con campos DENTRO */}
+        <Box component="form" noValidate onSubmit={(e) => e.preventDefault()}>
+          <TextField
+            fullWidth
+            margin="normal"
+            required
+            id="email"
+            label="Email Address / Phone / Username"
+            name="email"
+            autoComplete="email"
+            onChange={(e) => setEmail(e.target.value)}
+            autoFocus
+            value={email}
+          />
 
-              <TextField
-                fullWidth
-                margin="normal"
-                required
-                name="password"
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                onChange={(e) => setPassword(e.target.value)}
-                id="password"
-                autoComplete="current-password"
-                value={password}
-              />
+          <TextField
+            fullWidth
+            margin="normal"
+            required
+            name="password"
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            onChange={(e) => setPassword(e.target.value)}
+            id="password"
+            autoComplete="current-password"
+            value={password}
+          />
 
-              <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <FormControlLabel
-                  control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />}
-                  label="Remember me"
-                />
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#B22222", cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
-                >
-                  Forgot Password?
-                </Typography>
-              </Box>
+          <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <FormControlLabel
+              control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />}
+              label="Remember me"
+            />
+            <Typography
+              variant="body2"
+              sx={{ color: "#B22222", cursor: "pointer", "&:hover": { textDecoration: "underline" } }}
+            >
+              Forgot Password?
+            </Typography>
+          </Box>
 
-              <StyledButton
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
-                 onClick={handleClick}
-              >
-                Sign In
-              </StyledButton>
-            </Box>
-          </CardContent>
-        </StyledCard>
-      </Container>
-    </BackgroundContainer>
+          <StyledButton
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            onClick={handleClick}
+          >
+            Sign In
+          </StyledButton>
+        </Box>
+      </CardContent>
+    </StyledCard>
+  </Container>
+</BackgroundContainer> 
   );
 };
 

@@ -77,7 +77,7 @@ export default function DashboardCentralView() {
                 Card 6
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Contenido de la tarjeta 6.
+                Contenido de la tarjeta 6.-
               </Typography>
             </CardContent>
           </GlassCard>
