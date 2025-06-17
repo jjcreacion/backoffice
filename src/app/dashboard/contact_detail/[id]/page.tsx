@@ -85,7 +85,7 @@ const ContactDetailPage = () => {
       
       try {
         // Asumiendo que tienes un endpoint para obtener un contacto por ID
-        const response = await axios.get(`${baseUrl}/Contact/findOne/${contactId}`);
+        const response = await axios.get(`${baseUrl}:${port}/Contact/findOne/${contactId}`);
         const data: ContactDetail = response.data;
         setContact(data);
       } catch (e: any) {
