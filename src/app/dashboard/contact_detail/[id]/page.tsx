@@ -44,26 +44,54 @@ import {
   NoteAdd as NoteAddIcon,
   StickyNote2 as StickyNote2Icon,
   Person as PersonIcon,
-  FormatAlignLeft as FormatAlignLeftIcon
+  FormatAlignLeft as FormatAlignLeftIcon,
+  PriorityHigh as PriorityHighIcon
 } from '@mui/icons-material';
 
 import axios from 'axios';
 
 // Componente separado y memoizado para el formulario de notas
-const NotesForm = React.memo(({ colors }) => {
+const NotesForm = React.memo(({ colors, contactId, onNoteCreated }) => {
   const [newNote, setNewNote] = useState('');
   const [isPriorityNote, setIsPriorityNote] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const port = process.env.NEXT_PUBLIC_PORT;
 
   const handleCancelNote = () => {
     setNewNote('');
     setIsPriorityNote(false);
   };
 
-  const handlePostNote = () => {
-    if (!newNote.trim()) return;
-    console.log('Nueva nota:', newNote, 'Es prioritaria:', isPriorityNote);
-    setNewNote('');
-    setIsPriorityNote(false);
+  const handlePostNote = async () => {
+    if (!newNote.trim() || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      const noteData = {
+        note: newNote.trim(),
+        isPriority: isPriorityNote ? 1 : 0,
+        fkContact: contactId,
+        // fkUser se asigna automáticamente a 42 en el backend si no se especifica
+      };
+
+      await axios.post(`${baseUrl}:${port}/person-notes`, noteData);
+      
+      // Limpiar formulario
+      setNewNote('');
+      setIsPriorityNote(false);
+      
+      // Notificar al componente padre para recargar los datos
+      if (onNoteCreated) {
+        onNoteCreated();
+      }
+    } catch (error) {
+      console.error('Error creating note:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -78,6 +106,7 @@ const NotesForm = React.memo(({ colors }) => {
           placeholder="Nueva nota"
           variant="outlined"
           size="small"
+          disabled={isSubmitting}
           sx={{
             '& .MuiOutlinedInput-root': {
               backgroundColor: colors.noteBg,
@@ -127,6 +156,7 @@ const NotesForm = React.memo(({ colors }) => {
               checked={isPriorityNote}
               onChange={(e) => setIsPriorityNote(e.target.checked)}
               size="small"
+              disabled={isSubmitting}
               sx={{
                 color: colors.textSecondary,
                 '&.Mui-checked': {
@@ -148,6 +178,7 @@ const NotesForm = React.memo(({ colors }) => {
             size="small" 
             variant="outlined" 
             onClick={handleCancelNote}
+            disabled={isSubmitting}
             sx={{ 
               minWidth: 'auto', 
               px: 2,
@@ -167,7 +198,7 @@ const NotesForm = React.memo(({ colors }) => {
             size="small" 
             variant="contained" 
             onClick={handlePostNote}
-            disabled={!newNote.trim()}
+            disabled={!newNote.trim() || isSubmitting}
             sx={{ 
               minWidth: 'auto', 
               px: 2,
@@ -185,7 +216,7 @@ const NotesForm = React.memo(({ colors }) => {
               }
             }}
           >
-            Post
+            {isSubmitting ? <CircularProgress size={16} /> : 'Post'}
           </Button>
         </Box>
       </Box>
@@ -194,6 +225,20 @@ const NotesForm = React.memo(({ colors }) => {
 });
 
 NotesForm.displayName = 'NotesForm';
+
+// Función helper para formatear fechas
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  }) + ' ' + date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+};
 
 const ContactDetailPage = () => {
   const params = useParams();
@@ -220,35 +265,40 @@ const ContactDetailPage = () => {
     sidebarBorder: theme.palette.mode === 'light' ? '#e0e0e0' : '#333333'
   };
 
-  useEffect(() => {
-    const fetchContactDetail = async () => {
-      if (!contactId) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await axios.get(`${baseUrl}:${port}/Contact/findOne/${contactId}`);
-        const data: ContactDetail = response.data;
-        setContact(data);
-      } catch (e: any) {
-        if (axios.isAxiosError(e) && e.response) {
-          setError(`Failed to fetch contact: ${e.response.status} - ${e.response.statusText}`);
-          console.error('Error fetching contact:', e.response.data);
-        } else {
-          setError('Failed to fetch contact. Network error or unexpected problem.');
-          console.error('Error fetching contact:', e);
-        }
-      } finally {
-        setLoading(false);
+  const fetchContactDetail = async () => {
+    if (!contactId) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get(`${baseUrl}:${port}/Contact/findOne/${contactId}`);
+      const data: ContactDetail = response.data;
+      setContact(data);
+    } catch (e: any) {
+      if (axios.isAxiosError(e) && e.response) {
+        setError(`Failed to fetch contact: ${e.response.status} - ${e.response.statusText}`);
+        console.error('Error fetching contact:', e.response.data);
+      } else {
+        setError('Failed to fetch contact. Network error or unexpected problem.');
+        console.error('Error fetching contact:', e);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchContactDetail();
   }, [contactId, baseUrl, port]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  const handleNoteCreated = () => {
+    // Recargar los datos del contacto para mostrar la nueva nota
+    fetchContactDetail();
   };
 
   if (loading) {
@@ -290,6 +340,9 @@ const ContactDetailPage = () => {
   const activeAddresses = contact.person.addresses
     .filter(address => address.status === 1)
     .sort((a, b) => (b.isPrimary || 0) - (a.isPrimary || 0));
+
+  // Notas ya vienen ordenadas desde el backend (prioritarias primero, luego por fecha)
+  const notes = contact.notes || [];
 
   return (
     <Box sx={{ backgroundColor: colors.contentBg, minHeight: '100vh' }}>
@@ -743,27 +796,84 @@ const ContactDetailPage = () => {
               </Typography>
               
               {/* Formulario Nueva nota */}
-              <NotesForm colors={colors} />
+              <NotesForm 
+                colors={colors} 
+                contactId={Number(contactId)} 
+                onNoteCreated={handleNoteCreated}
+              />
 
               {/* Historial de notas */}
-              <Box sx={{ 
-                border: `1px solid ${colors.border}`, 
-                borderRadius: 1, 
-                p: 2,
-                backgroundColor: colors.noteBg
-              }}>
-                <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 1 }}>
-                  LUIS MENDEZ
-                </Typography>
-                <Typography variant="caption" sx={{ color: colors.textSecondary, mb: 1, display: 'block' }}>
-                  05/12/2025 5:11 am
-                </Typography>
-                <Typography variant="body2" sx={{ mb: 1, color: colors.text }}>
-                  832-807-8538
-                </Typography>
-                <Typography variant="body2" sx={{ color: colors.textSecondary }}>
-                  E- called and was hung up on.
-                </Typography>
+              <Box sx={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                {notes.length > 0 ? (
+                  notes.map((note) => {
+                    // Nombre del usuario que creó la nota
+                    const userName = note.user?.person 
+                      ? `${note.user.person.firstName} ${note.user.person.lastName}`.toUpperCase()
+                      : 'UNKNOWN USER';
+
+                    const createdDate = formatDate(note.createdAt);
+                    const updatedDate = note.updatedAt !== note.createdAt ? formatDate(note.updatedAt) : null;
+
+                    return (
+                      <Box 
+                        key={note.pkNote}
+                        sx={{ 
+                          border: `1px solid ${colors.border}`, 
+                          borderRadius: 1, 
+                          p: 2,
+                          mb: 2,
+                          backgroundColor: colors.noteBg,
+                          position: 'relative'
+                        }}
+                      >
+                        {/* Indicador de prioridad */}
+                        {note.isPriority === 1 && (
+                          <Box sx={{ 
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5
+                          }}>
+                            <PriorityHighIcon sx={{ color: '#f44336', fontSize: 18 }} />
+                            <Typography variant="caption" sx={{ color: '#f44336', fontWeight: 'bold' }}>
+                              Priority
+                            </Typography>
+                          </Box>
+                        )}
+
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1976d2', mb: 1 }}>
+                          {userName}
+                        </Typography>
+                        
+                        <Typography variant="caption" sx={{ color: colors.textSecondary, mb: 1, display: 'block' }}>
+                          <strong>Created:</strong> {createdDate}
+                          {updatedDate && (
+                            <span> --- <strong>Updated:</strong> {updatedDate}</span>
+                          )}
+                        </Typography>
+                        
+                        <Typography variant="body2" sx={{ mb: 1, color: colors.text }}>
+                          {note.note}
+                        </Typography>
+                      </Box>
+                    );
+                  })
+                ) : (
+                  <Box sx={{ 
+                    border: `1px solid ${colors.border}`, 
+                    borderRadius: 1, 
+                    p: 2,
+                    backgroundColor: colors.noteBg,
+                    textAlign: 'center'
+                  }}>
+                    <StickyNote2Icon sx={{ color: colors.textSecondary, fontSize: 48, mb: 1 }} />
+                    <Typography variant="body2" sx={{ color: colors.textSecondary }}>
+                      No hay notas para este contacto
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             </Box>
           </Box>

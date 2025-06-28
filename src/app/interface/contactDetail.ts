@@ -38,9 +38,26 @@ export interface ContactDetail {
       createdAt: string;
       updatedAt: string;
     }[];
+    notes: {
+      pkNote: number;
+      note: string;
+      isPriority: number;
+      createdAt: string;
+      updatedAt: string;
+      contact: {
+        pkContact: number;
+      };
+      user: {
+        pkUser: number;
+        username: string;
+        email: string;
+        person: {
+          pkPerson: number;
+          firstName: string;
+          middleName: string | null;
+          lastName: string;
+        };
+      };
+    }[];
   };
 }
-
-
-
-
