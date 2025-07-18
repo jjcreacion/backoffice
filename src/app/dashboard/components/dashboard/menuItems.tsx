@@ -7,7 +7,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import ClassIcon from '@mui/icons-material/Class';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import AppSettingsAltIcon from '@mui/icons-material/AppSettingsAlt';
-import ContactSupportIcon from '@mui/icons-material/ContactSupport';
+import CampaignIcon from '@mui/icons-material/Campaign';
 
 const iconSmall = 18;
 const iconSmallSubItems = 16; 
@@ -23,7 +23,7 @@ const menuItems = [
       icon: <AppSettingsAltIcon style={{ fontSize: iconSmall }} />,
       subItems: [
         { label: 'Request Services', icon: <PhonelinkRingIcon style={{ fontSize: iconSmallSubItems }} />, href: '/dashboard/app-mobile/service-request' },
-        { label: 'Question For Company', icon: <ContactSupportIcon style={{ fontSize: iconSmallSubItems }} />, href: '/dashboard/' },
+        { label: 'Campaigns', icon: <CampaignIcon style={{ fontSize: iconSmallSubItems }} />, href: '/dashboard/app-mobile/campaigns' },
         ],
     },
     {
