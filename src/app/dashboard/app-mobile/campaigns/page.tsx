@@ -7,16 +7,16 @@ import {
     Snackbar,
     Alert,
     CircularProgress,
-    Button, 
-    Dialog, 
+    Button,
+    Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
 } from '@mui/material';
 import { FaSearch } from 'react-icons/fa';
 import axios from 'axios';
-import PageContent from '../../components/dashboard/pageContent'; 
-import GlassCard from '../../components/dashboard/glassCard'; 
+import PageContent from '../../components/dashboard/pageContent';
+import GlassCard from '../../components/dashboard/glassCard';
 import { MobileCampaign } from '../../../interface/MobileCampaign';
 import MobileCampaignTable  from '../../components/app-mobile/campaigns/MobileCampaignTable'; 
 import MobileCampaignForm from '../../components/app-mobile/campaigns/MobileCampaignTable'; 
@@ -26,9 +26,9 @@ const MobileCampaignsPage: React.FC = () => {
     const [campaigns, setCampaigns] = useState<MobileCampaign[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isFormOpen, setIsFormOpen] = useState(false); 
-    const [isEditMode, setIsEditMode] = useState(true); 
-    const [selectedCampaign, setSelectedCampaign] = useState<MobileCampaign | null>(null); 
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(true);
+    const [selectedCampaign, setSelectedCampaign] = useState<MobileCampaign | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [orderBy, setOrderBy] = useState('createdAt');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -40,7 +40,7 @@ const MobileCampaignsPage: React.FC = () => {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
     const port = process.env.NEXT_PUBLIC_PORT || '5641';
-    const API_URL = `${baseUrl}:${port}/mobile-campaigns`; 
+    const API_URL = `${baseUrl}:${port}/mobile-campaigns`;
 
     const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
         setSnackbarMessage(message);
@@ -55,18 +55,18 @@ const MobileCampaignsPage: React.FC = () => {
         setSnackbarOpen(false);
     };
 
-   
     const fetchData = async () => {
         setLoading(true);
-        setError(null); 
+        setError(null);
         try {
             const response = await axios.get<MobileCampaign[]>(API_URL);
-            setCampaigns(response.data);
+            setCampaigns(Array.isArray(response.data) ? response.data : []);
             showSnackbar('Campañas cargadas exitosamente.', 'success');
         } catch (err: any) {
             console.error('Error fetching campaigns:', err);
             setError(err.message || 'Error al cargar las campañas.');
             showSnackbar(`Error al cargar campañas: ${err.message || 'Error desconocido'}`, 'error');
+            setCampaigns([]);
         } finally {
             setLoading(false);
         }
@@ -83,14 +83,14 @@ const MobileCampaignsPage: React.FC = () => {
     };
 
     const handleCreate = () => {
-        setSelectedCampaign(null); 
+        setSelectedCampaign(null);
         setIsEditMode(true);
         setIsFormOpen(true);
     };
 
     const handleView = (campaign: MobileCampaign) => {
         setSelectedCampaign(campaign);
-        setIsEditMode(false); 
+        setIsEditMode(false);
         setIsFormOpen(true);
     };
 
@@ -101,7 +101,7 @@ const MobileCampaignsPage: React.FC = () => {
         try {
             await axios.delete(`${API_URL}/${id}`);
             showSnackbar('Campaña eliminada exitosamente.', 'success');
-            fetchData(); 
+            fetchData();
         } catch (err: any) {
             console.error('Error deleting campaign:', err);
             showSnackbar(`Error al eliminar campaña: ${err.message || 'Error desconocido'}`, 'error');
@@ -130,8 +130,8 @@ const MobileCampaignsPage: React.FC = () => {
 
     const handleSaveSuccess = () => {
         showSnackbar('Campaña guardada exitosamente.', 'success');
-        setIsFormOpen(false); 
-        fetchData(); 
+        setIsFormOpen(false);
+        fetchData();
     };
 
     return (
@@ -165,10 +165,10 @@ const MobileCampaignsPage: React.FC = () => {
                         <Typography color="error" sx={{ textAlign: 'center', mt: 2 }}>{error}</Typography>
                     ) : (
                         <MobileCampaignTable
-                            campaigns={filteredCampaigns}
+                            campaigns={filteredCampaigns} {/* <-- CAMBIO CLAVE AQUÍ: Pasa filteredCampaigns */}
                             onEdit={handleEdit}
                             onView={handleView}
-                            onDelete={handleDelete} 
+                            onDelete={handleDelete}
                             orderBy={orderBy}
                             order={order}
                             handleSort={handleSort}
@@ -189,11 +189,11 @@ const MobileCampaignsPage: React.FC = () => {
                         <DialogTitle>{selectedCampaign ? (isEditMode ? 'Editar Campaña' : 'Ver Campaña') : 'Crear Nueva Campaña'}</DialogTitle>
                         <DialogContent>
                             <MobileCampaignForm
-                                campaign={selectedCampaign}
+                                campaigns={selectedCampaign}
                                 isEditMode={isEditMode}
                                 onSaveSuccess={handleSaveSuccess}
-                                showSnackbar={showSnackbar} 
-                                onClose={() => setIsFormOpen(false)} 
+                                showSnackbar={showSnackbar}
+                                onClose={() => setIsFormOpen(false)}
                             />
                         </DialogContent>
                         <DialogActions>

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useEffect, useState} from 'react';
 import {
   Dialog,
@@ -16,18 +16,18 @@ import {
   TableSortLabel,
   IconButton,
   Button,
-  Tooltip, // Añadido para tooltips en los íconos
-  Typography, // Añadido para el mensaje de no campañas encontradas
-  Box // Añadido para el contenedor de los botones de acción
+  Tooltip,
+  Typography,
+  Box
 } from '@mui/material';
-import { Edit as EditIcon, Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material'; // Usando íconos de MUI para consistencia
-import { MobileCampaign } from '../../../../interface/MobileCampaign'; // Importa tu interfaz MobileCampaign
+import { Edit as EditIcon, Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { MobileCampaign } from '../../../../interface/MobileCampaign';
 import { ChangeEvent, MouseEvent } from 'react';
 
 interface MobileCampaignTableProps {
-  campaigns: MobileCampaign[]; // Cambiado de categories a campaigns
-  onEdit: (campaign: MobileCampaign) => void; // Tipo cambiado a MobileCampaign
-  onView: (campaign: MobileCampaign) => void; // Tipo cambiado a MobileCampaign
+  campaigns: MobileCampaign[];
+  onEdit: (campaign: MobileCampaign) => void;
+  onView: (campaign: MobileCampaign) => void;
   onDelete: (id: number) => Promise<void>;
   orderBy: string;
   order: 'asc' | 'desc';
@@ -36,11 +36,10 @@ interface MobileCampaignTableProps {
   rowsPerPage: number;
   handleChangePage: (event: MouseEvent<HTMLButtonElement> | null, newPage: number) => void;
   handleChangeRowsPerPage: (event: ChangeEvent<HTMLInputElement>) => void;
-  // searchQuery es manejado por el componente padre (MobileCampaignsPage), así que no se necesita aquí.
 }
 
 const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
-  campaigns, // Cambiado de categories
+  campaigns,
   onView,
   onEdit,
   onDelete,
@@ -53,43 +52,36 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
   handleChangeRowsPerPage,
 }) => {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [campaignToDeleteId, setCampaignToDeleteId] = useState<number | null>(null); // Cambiado a campaignToDeleteId
+  const [campaignToDeleteId, setCampaignToDeleteId] = useState<number | null>(null);
 
-  // Define los encabezados de la tabla
   const headCells = [
-    { id: 'campaignsId', label: 'ID' },
+    { id: 'rowIndex', label: 'Nº' }, // Cambiado a 'Nº' para el número de fila
     { id: 'title', label: 'Título' },
     { id: 'startDate', label: 'Inicio' },
     { id: 'endDate', label: 'Fin' },
     { id: 'isActive', label: 'Activa' },
-    { id: 'createdAt', label: 'Creada' },
-    { id: 'updatedAt', label: 'Actualizada' },
-    { id: 'actions', label: 'Acciones', disableSorting: true }, // disableSorting para la columna de acciones
+    // Eliminadas 'createdAt' y 'updatedAt'
+    { id: 'actions', label: 'Acciones', disableSorting: true },
   ];
 
-  // Función para ordenar los datos
   const sortedCampaigns = React.useMemo(() => {
-    return [...campaigns].sort((a, b) => {
+    return campaigns.sort((a, b) => {
       const aValue = a[orderBy as keyof MobileCampaign];
       const bValue = b[orderBy as keyof MobileCampaign];
 
       let comparison = 0;
       if (aValue === null && bValue === null) comparison = 0;
-      else if (aValue === null) comparison = -1; // Los nulos van primero para orden ascendente
-      else if (bValue === null) comparison = 1;  // Los nulos van primero para orden ascendente
+      else if (aValue === null) comparison = -1;
+      else if (bValue === null) comparison = 1;
       else if (typeof aValue === 'string' && typeof bValue === 'string') {
           comparison = aValue.localeCompare(bValue);
       } else if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
-          // Si son booleanos, false antes que true para ascendente
           comparison = (aValue === bValue) ? 0 : (aValue ? -1 : 1);
       } else if (aValue instanceof Date && bValue instanceof Date) {
-          // Si son fechas, compara sus valores de tiempo
           comparison = aValue.getTime() - bValue.getTime();
       } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-          // Si son números, compara directamente
           comparison = aValue - bValue;
       } else {
-          // Alternativa para otros tipos o tipos mixtos
           comparison = String(aValue).localeCompare(String(bValue));
       }
 
@@ -97,7 +89,6 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
     });
   }, [campaigns, orderBy, order]);
 
-  // Calcula las campañas a mostrar en la página actual
   const paginatedCampaigns = React.useMemo(() => {
     return sortedCampaigns.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [sortedCampaigns, page, rowsPerPage]);
@@ -114,7 +105,6 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
         await onDelete(campaignToDeleteId);
       } catch (error) {
         console.error("Error al eliminar Campaña:", error);
-        // Podrías mostrar un snackbar aquí también si lo deseas
       } finally {
         setCampaignToDeleteId(null);
         setConfirmDeleteOpen(false);
@@ -139,10 +129,7 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
                 padding="normal"
                 sortDirection={orderBy === headCell.id ? order : false}
                 sx={{
-                  fontWeight: 'bold',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)', // Efecto cristal para el encabezado
-                  backdropFilter: 'blur(10px)',
-                  color: 'white',
+                  fontWeight: 'normal',
                 }}
               >
                 {headCell.disableSorting ? (
@@ -153,10 +140,6 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
                     direction={orderBy === headCell.id ? order : 'asc'}
                     onClick={() => handleSort(headCell.id)}
                     sx={{
-                        '& .MuiTableSortLabel-icon': {
-                            color: 'white !important', // Asegura que el ícono sea blanco
-                        },
-                        color: 'white', // Asegura que la etiqueta sea blanca
                     }}
                   >
                     {headCell.label}
@@ -176,15 +159,14 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
               </TableCell>
             </TableRow>
           ) : (
-            paginatedCampaigns.map((campaign) => (
+            paginatedCampaigns.map((campaign, index) => ( // Añadido 'index' al map
               <TableRow hover role="checkbox" tabIndex={-1} key={campaign.campaignsId}>
-                <TableCell>{campaign.campaignsId}</TableCell>
+                <TableCell>{(page * rowsPerPage) + index + 1}</TableCell> {/* CAMBIO: Número de fila */}
                 <TableCell>{campaign.title}</TableCell>
                 <TableCell>{campaign.startDate ? new Date(campaign.startDate).toLocaleDateString() : 'N/A'}</TableCell>
                 <TableCell>{campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : 'N/A'}</TableCell>
                 <TableCell>{campaign.isActive ? 'Sí' : 'No'}</TableCell>
-                <TableCell>{new Date(campaign.createdAt).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(campaign.updatedAt).toLocaleDateString()}</TableCell>
+                {/* Eliminadas celdas para createdAt y updatedAt */}
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <Tooltip title="Ver">
@@ -211,7 +193,7 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
       </Table>
       <TablePagination
         component="div"
-        count={campaigns.length} // Cuenta desde la lista completa de campañas (filtrada por la página padre)
+        count={campaigns.length}
         page={page}
         onPageChange={handleChangePage}
         rowsPerPage={rowsPerPage}
@@ -220,21 +202,6 @@ const MobileCampaignTable: React.FC<MobileCampaignTableProps> = ({
         labelRowsPerPage="Filas por página:"
         labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
         sx={{
-            color: 'white', // Color general del texto de la paginación
-            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                color: 'white',
-            },
-            '.MuiTablePagination-selectIcon': {
-                color: 'white',
-            },
-            '.MuiTablePagination-select': {
-                color: 'white',
-            },
-            '.MuiTablePagination-actions': {
-                '& button': {
-                    color: 'white', // Color de los botones de navegación
-                },
-            },
         }}
       />
 
