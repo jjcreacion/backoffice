@@ -1,335 +1,354 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import {
-    Box,
-    TextField,
-    Button,
-    CircularProgress,
-    FormControlLabel,
-    Switch,
-    Typography,
-    Grid,
-    IconButton,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TextField,
+  Button,
+  FormControlLabel,
+  Switch,
+  Typography,
+  Box,
+  Grid,
 } from '@mui/material';
-import { PhotoCamera } from '@mui/icons-material'; // Ícono para la subida de imagen
-import { useFormik } from 'formik'; // Para la gestión del formulario y validación
-import * as Yup from 'yup'; // Para la validación de esquemas
-import axios from 'axios';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { MobileCampaign } from '../../../../interface/MobileCampaign';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
-import { MobileCampaign } from '../../../../interface/MobileCampaign'; // Interfaz para la entidad de campaña
-
-// Definimos un tipo local para los datos del formulario, que es un subconjunto o parcial de MobileCampaign
-// y que coincide con lo que el backend espera para crear/actualizar.
-interface MobileCampaignFormData {
-    title: string;
-    description: string; // Se manejará como string vacío si es null
-    startDate: string; // Formato YYYY-MM-DD para el input de fecha
-    endDate: string;   // Formato YYYY-MM-DD para el input de fecha
-    isActive: boolean;
+interface CategoryFormProps {
+  open: boolean;
+  isEdit: boolean;
+  onClose: () => void;
+  campaign: MobileCampaign | null;
+  onSave: (campaign: MobileCampaign, imageFile?: File | null) => void;
 }
 
-interface MobileCampaignFormProps {
-    open: boolean; // Controla si el diálogo está abierto
-    campaign: MobileCampaign | null; // Datos de la campaña para editar/ver, null para creación
-    isEdit: boolean; // true para editar/crear, false para solo ver
-    showSnackbar: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void; // Utilidad para mostrar Snackbar
-    onClose: () => void; // Callback para cerrar el diálogo
-}
+const CategoryForm: React.FC<CategoryFormProps> = ({ open, isEdit, onClose, campaign, onSave }) => {
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
-const MobileCampaignForm: React.FC<MobileCampaignFormProps> = ({
-    open,
-    campaign,
-    isEdit,
-    showSnackbar,
-    onClose,
-}) => {
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
+  const initialValues: MobileCampaign = {
+    campaignsId: 0,
+    title: '',
+    description: '',
+    imageUrl: null,
+    startDate: null as unknown as Date, 
+    endDate: null as unknown as Date, 
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
-    const port = process.env.NEXT_PUBLIC_PORT || '5641';
-    const API_URL = `${baseUrl}:${port}/mobile-campaigns`;
+  const validationSchema = Yup.object().shape({
+    title: Yup.string().required('Title is required').max(255, 'Title cannot exceed 255 characters'),
+    description: Yup.string().required('Description is required').max(1000, 'Description cannot exceed 1000 characters'),
+    startDate: Yup.date()
+      .nullable() 
+      .required('Start date is required')
+      .typeError('Invalid date format'),
+    endDate: Yup.date()
+      .nullable() 
+      .required('End date is required')
+      .typeError('Invalid date format')
+      .min(Yup.ref('startDate'), 'End date cannot be before start date'),
+    isActive: Yup.boolean().required('Active status is required'),
+    imageUrl: Yup.string().nullable().when(['$selectedImageFile', '$campaignImageUrl', '$isEdit'], {
+      is: (selectedFile: File | null, existingUrl: string | null, isEditing: boolean) =>
+        isEditing && !selectedFile && !existingUrl, 
+      then: (schema) => schema.required('Campaign image is required'),
+      otherwise: (schema) => schema.nullable(), 
+    }),
+  });
 
-    // Valores iniciales para Formik
-    const initialValues: MobileCampaignFormData = {
-        title: '',
-        description: '',
-        startDate: '', // Se inicializa como string vacío para el input de fecha
-        endDate: '',   // Se inicializa como string vacío para el input de fecha
-        isActive: true,
+
+  const formik = useFormik({
+    initialValues: initialValues,
+    validationSchema: validationSchema,
+    validationContext: {
+        selectedImageFile,
+        campaignImageUrl: campaign?.imageUrl,
+        isEdit,
+    },
+    onSubmit: (values) => {
+        if (isEdit && !selectedImageFile && !campaign?.imageUrl) {
+            formik.setFieldError('imageUrl', 'Campaign image is required');
+            return;
+        }
+        onSave(values, selectedImageFile);
+        onClose();
+    },
+  });
+
+  useEffect(() => {
+    if (open) {
+      formik.resetForm();
+      formik.setTouched({});
+      setSelectedImageFile(null);
+      setImagePreviewUrl(null);
+
+      if (campaign) {
+        formik.setValues({
+          ...initialValues,
+          ...campaign,
+          startDate: campaign.startDate ? new Date(campaign.startDate) : null as unknown as Date,
+          endDate: campaign.endDate ? new Date(campaign.endDate) : null as unknown as Date,
+        });
+        if (campaign.imageUrl) {
+          setImagePreviewUrl(campaign.imageUrl);
+        }
+      } else {
+        formik.setValues(initialValues);
+      }
+    }
+    return () => {
+      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
     };
+  }, [open, isEdit, campaign]); 
 
-    // Esquema de validación usando Yup
-    const validationSchema = Yup.object().shape({
-        title: Yup.string().required('El título es obligatorio.'),
-        description: Yup.string().nullable(), // La descripción puede ser nula
-        startDate: Yup.date()
-            .required('La fecha de inicio es obligatoria.')
-            .nullable()
-            .typeError('Formato de fecha inválido.'), // Mensaje de error para formato de fecha
-        endDate: Yup.date()
-            .required('La fecha de fin es obligatoria.')
-            .nullable()
-            .typeError('Formato de fecha inválido.') // Mensaje de error para formato de fecha
-            .min(
-                Yup.ref('startDate'), // La fecha de fin no puede ser anterior a la de inicio
-                'La fecha de fin no puede ser anterior a la fecha de inicio.'
-            ),
-        isActive: Yup.boolean().required('El estado activo es obligatorio.'),
-    });
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files && event.target.files[0];
+    if (file) {
+      setSelectedImageFile(file);
+      const preview = URL.createObjectURL(file);
+      setImagePreviewUrl(preview);
+      formik.setFieldError('imageUrl', '');
+      formik.setFieldTouched('imageUrl', false); 
+    } else {
+      setSelectedImageFile(null);
+      setImagePreviewUrl(campaign?.imageUrl || null);
 
-    // Configuración de Formik
-    const formik = useFormik({
-        initialValues: initialValues,
-        validationSchema: validationSchema,
-        onSubmit: async (values) => {
-            setLoading(true);
-            try {
-                let response;
-                let campaignId = campaign?.campaignsId; // ID si estamos en modo edición
+      if (isEdit && !campaign?.imageUrl) { 
+          formik.setFieldError('imageUrl', 'Campaign image is required');
+          formik.setFieldTouched('imageUrl', true, false); 
+      } else {
+          formik.setFieldError('imageUrl', ''); 
+          formik.setFieldTouched('imageUrl', false);
+      }
+    }
+  };
 
-                // Formatear fechas a ISO string para el backend
-                const formattedStartDate = values.startDate ? new Date(values.startDate).toISOString() : '';
-                const formattedEndDate = values.endDate ? new Date(values.endDate).toISOString() : '';
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{campaign?.campaignsId ? 'Edit Campaign' : 'Add New Campaign'}</DialogTitle>
+      <DialogContent>
+        <form onSubmit={formik.handleSubmit}>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="title"
+            label="Title"
+            type="text"
+            fullWidth
+            value={formik.values.title}
+            onChange={formik.handleChange}
+            error={formik.touched.title && Boolean(formik.errors.title)}
+            helperText={formik.touched.title && formik.errors.title}
+            InputLabelProps={{ shrink: true }}
+            disabled={!isEdit && campaign?.campaignsId !== 0}
+          />
 
-                if (campaign) { // Modo de edición (PATCH)
-                    const updateData = { // Objeto de datos para la actualización
-                        campaignsId: campaign.campaignsId, // El ID es necesario para la actualización en el backend
-                        title: values.title,
-                        description: values.description,
-                        startDate: formattedStartDate,
-                        endDate: formattedEndDate,
-                        isActive: values.isActive,
-                    };
-                    response = await axios.patch(`${API_URL}/${campaign.campaignsId}`, updateData);
-                    showSnackbar('Campaña actualizada exitosamente.', 'success');
-                } else { // Modo de creación (POST)
-                    const createData = { // Objeto de datos para la creación
-                        title: values.title,
-                        description: values.description,
-                        startDate: formattedStartDate,
-                        endDate: formattedEndDate,
-                        isActive: values.isActive,
-                    };
-                    response = await axios.post(API_URL, createData);
-                    campaignId = response.data.campaignsId; // Obtener el ID de la nueva campaña creada
-                    showSnackbar('Campaña creada exitosamente.', 'success');
+          <TextField
+            margin="dense"
+            name="description"
+            label="Description"
+            type="text"
+            fullWidth
+            multiline
+            rows={3}
+            value={formik.values.description || ''}
+            onChange={formik.handleChange}
+            error={formik.touched.description && Boolean(formik.errors.description)}
+            helperText={formik.touched.description && formik.errors.description}
+            InputLabelProps={{ shrink: true }}
+            disabled={!isEdit && campaign?.campaignsId !== 0}
+          />
+
+          <Grid container spacing={2} alignItems="center" sx={{ mt: 1, mb: 2 }}>
+            <Grid item xs={12} sm={5}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="Start Date"
+                  value={formik.values.startDate || null}
+                  onChange={(date: Date | null) => formik.setFieldValue('startDate', date)}
+                  slotProps={{
+                    textField: {
+                      margin: 'dense',
+                      fullWidth: true,
+                      error: formik.touched.startDate && Boolean(formik.errors.startDate),
+                      helperText: formik.touched.startDate && (formik.errors.startDate as string),
+                      InputLabelProps: { shrink: true },
+                      disabled: !isEdit && campaign?.campaignsId !== 0,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            </Grid>
+            <Grid item xs={12} sm={5}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="End Date"
+                  value={formik.values.endDate || null}
+                  onChange={(date: Date | null) => formik.setFieldValue('endDate', date)}
+                  slotProps={{
+                    textField: {
+                      margin: 'dense',
+                      fullWidth: true,
+                      error: formik.touched.endDate && Boolean(formik.errors.endDate),
+                      helperText: formik.touched.endDate && (formik.errors.endDate as string),
+                      InputLabelProps: { shrink: true },
+                      disabled: !isEdit && campaign?.campaignsId !== 0,
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formik.values.isActive}
+                    onChange={formik.handleChange}
+                    name="isActive"
+                    sx={{
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: 'green',
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 128, 0, 0.08)',
+                        },
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                        backgroundColor: 'green',
+                      },
+                      '& .MuiSwitch-switchBase': {
+                        color: 'red',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 0, 0, 0.08)',
+                        },
+                      },
+                      '& .MuiSwitch-track': {
+                        backgroundColor: 'red',
+                      },
+                    }}
+                    disabled={!isEdit && campaign?.campaignsId !== 0}
+                  />
                 }
+                label={formik.values.isActive ? 'Active' : 'Inactive'}
+                labelPlacement="top"
+                sx={{
+                  color: formik.values.isActive ? 'green' : 'red',
+                  display: 'flex',
+                  flexDirection: 'column-reverse',
+                  alignItems: 'center',
+                  ml: { xs: 0, sm: 1 },
+                }}
+              />
+              {formik.touched.isActive && formik.errors.isActive && (
+                <Typography color="error" variant="caption">
+                  {formik.errors.isActive}
+                </Typography>
+              )}
+            </Grid>
+          </Grid>
 
-                // Si hay un archivo de imagen seleccionado Y tenemos un ID de campaña, subirlo
-                if (imageFile && campaignId) {
-                    await uploadImage(campaignId, imageFile);
-                    showSnackbar('Imagen de campaña subida y asociada exitosamente.', 'success');
-                } else if (!campaign && !imageFile) {
-                    // Si es una nueva campaña y no se subió imagen, notificar que se puede añadir después
-                    showSnackbar('Campaña creada sin imagen. Puedes añadir una imagen editando la campaña.', 'info');
-                }
-
-                onSave(); // Llama al callback para que el padre refresque la lista y cierre el modal
-            } catch (err: any) {
-                console.error('Error al guardar la campaña:', err);
-                showSnackbar(`Error al guardar campaña: ${err.response?.data?.message || err.message}`, 'error');
-            } finally {
-                setLoading(false);
-            }
-        },
-    });
-
-    // Efecto para resetear el formulario cuando el diálogo se abre o la campaña seleccionada cambia
-    useEffect(() => {
-        if (open) {
-            formik.resetForm(); // Resetea el estado de Formik
-            formik.setTouched({}); // Limpia los campos tocados
-            if (campaign) {
-                // Si hay una campaña existente, pre-rellena el formulario
-                formik.setValues({
-                    title: campaign.title,
-                    description: campaign.description ?? '', // Usa '' si es null para el TextField
-                    startDate: campaign.startDate ? new Date(campaign.startDate).toISOString().split('T')[0] : '', // Formato YYYY-MM-DD
-                    endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().split('T')[0] : '',     // Formato YYYY-MM-DD
-                    isActive: campaign.isActive,
-                });
-                setImagePreview(campaign.imageUrl || null); // Muestra la imagen existente
-            } else {
-                // Si es una nueva campaña, inicializa con valores por defecto
-                formik.setValues(initialValues);
-                setImageFile(null);
-                setImagePreview(null);
-            }
-        }
-    }, [open, campaign]); // Depende de 'open' y 'campaign'
-
-    /**
-     * Maneja la selección de un archivo de imagen.
-     * @param e El evento de cambio del input de archivo.
-     */
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file)); // Crea una URL temporal para la vista previa
-        } else {
-            setImageFile(null);
-            setImagePreview(null);
-        }
-    };
-
-    /**
-     * Sube la imagen al servidor.
-     * @param campaignId El ID de la campaña a la que se asocia la imagen.
-     * @param file El archivo de imagen a subir.
-     * @returns La URL de la imagen guardada.
-     * @throws Error si la subida falla.
-     */
-    const uploadImage = async (campaignId: number, file: File): Promise<string> => {
-        const formData = new FormData();
-        formData.append('file', file); // 'file' debe coincidir con el nombre del campo en el interceptor del backend
-
-        try {
-            const response = await axios.post(`${API_URL}/upload-image/${campaignId}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            // Asumiendo que el backend devuelve la URL actualizada de la campaña en la respuesta
-            return response.data.imageUrl;
-        } catch (uploadError: any) {
-            console.error('Error al subir la imagen:', uploadError);
-            throw new Error(`Error al subir la imagen: ${uploadError.response?.data?.message || uploadError.message}`);
-        }
-    };
-
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle>{campaign ? (isEdit ? 'Editar Campaña' : 'Ver Campaña') : 'Crear Nueva Campaña'}</DialogTitle>
-            <DialogContent>
-                {/* El formulario está dentro del DialogContent */}
-                <Box component="form" onSubmit={formik.handleSubmit} sx={{ p: 2 }}>
-                    <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="Título"
-                                name="title"
-                                value={formik.values.title}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                error={formik.touched.title && Boolean(formik.errors.title)}
-                                helperText={formik.touched.title && formik.errors.title}
-                                disabled={!isEdit} // Deshabilita si no está en modo edición
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="Descripción"
-                                name="description"
-                                value={formik.values.description}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                multiline
-                                rows={3}
-                                disabled={!isEdit}
-                            />
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth
-                                label="Fecha de Inicio"
-                                name="startDate"
-                                type="date" // Input de tipo fecha
-                                value={formik.values.startDate}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                InputLabelProps={{ shrink: true }} // Asegura que el label no se superponga con la fecha
-                                error={formik.touched.startDate && Boolean(formik.errors.startDate)}
-                                helperText={formik.touched.startDate && formik.errors.startDate}
-                                disabled={!isEdit}
-                            />
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                fullWidth
-                                label="Fecha de Fin"
-                                name="endDate"
-                                type="date" // Input de tipo fecha
-                                value={formik.values.endDate}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                InputLabelProps={{ shrink: true }}
-                                error={formik.touched.endDate && Boolean(formik.errors.endDate)}
-                                helperText={formik.touched.endDate && formik.errors.endDate}
-                                disabled={!isEdit}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={formik.values.isActive}
-                                        onChange={formik.handleChange}
-                                        name="isActive"
-                                        color="primary"
-                                        disabled={!isEdit}
-                                    />
-                                }
-                                label="Activa"
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Typography variant="subtitle1" gutterBottom>
-                                Imagen de Campaña
-                            </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <input
-                                    accept="image/*"
-                                    style={{ display: 'none' }} // Oculta el input de archivo por defecto
-                                    id="campaign-image-upload"
-                                    type="file"
-                                    onChange={handleImageChange}
-                                    disabled={!isEdit}
-                                />
-                                <label htmlFor="campaign-image-upload">
-                                    <IconButton color="primary" component="span" disabled={!isEdit}>
-                                        <PhotoCamera /> {/* Ícono de cámara */}
-                                    </IconButton>
-                                </label>
-                                {imagePreview && ( // Muestra la vista previa si existe
-                                    <Box
-                                        component="img"
-                                        src={imagePreview}
-                                        alt="Vista previa de la imagen"
-                                        sx={{ width: 100, height: 100, objectFit: 'cover', borderRadius: '8px' }}
-                                    />
-                                )}
-                                {!imagePreview && !imageFile && ( // Mensaje si no hay imagen seleccionada
-                                    <Typography variant="body2" color="textSecondary">
-                                        No hay imagen seleccionada.
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Grid>
-                    </Grid>
-                </Box>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose} color="secondary" disabled={loading}>
-                    Cerrar
-                </Button>
-                {isEdit && ( // Solo muestra el botón de guardar/crear si está en modo edición
-                    <Button type="submit" variant="contained" color="primary" onClick={formik.handleSubmit} disabled={loading}>
-                        {loading ? <CircularProgress size={24} /> : (campaign ? 'Actualizar' : 'Crear')}
+          <Grid container spacing={2} alignItems="center" sx={{ mt: 2, mb: 2 }}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="subtitle1" gutterBottom>
+                Campaign Image
+              </Typography>
+              {isEdit && (
+                <Box display="flex" alignItems="center" gap={1}>
+                  <input
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    id="image-upload-button"
+                    type="file"
+                    onChange={handleImageChange}
+                    onBlur={() => formik.setFieldTouched('imageUrl', true, false)}
+                  />
+                  <label htmlFor="image-upload-button">
+                    <Button variant="outlined" component="span">
+                      {imagePreviewUrl ? 'Change Image' : 'Upload Image'}
                     </Button>
-                )}
-            </DialogActions>
-        </Dialog>
-    );
+                  </label>
+                  {selectedImageFile && (
+                    <Typography variant="caption" noWrap>
+                      {selectedImageFile.name}
+                    </Typography>
+                  )}
+                  {(selectedImageFile || (campaign && campaign.imageUrl && !selectedImageFile)) && (
+                    <Button
+                      variant="text"
+                      color="error"
+                      size="small"
+                      onClick={() => {
+                        setSelectedImageFile(null);
+                        setImagePreviewUrl(null);
+                        if (isEdit && !campaign?.imageUrl) {
+                          formik.setFieldError('imageUrl', 'Campaign image is required');
+                          formik.setFieldTouched('imageUrl', true, false);
+                        } else {
+                            formik.setFieldError('imageUrl', ''); // Clear error if it was a new image and now cleared
+                            formik.setFieldTouched('imageUrl', true, false); // Mark as touched
+                        }
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </Box>
+              )}
+              {formik.touched.imageUrl && formik.errors.imageUrl && (
+                <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                  {formik.errors.imageUrl}
+                </Typography>
+              )}
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              {(imagePreviewUrl || (campaign && campaign.imageUrl && !isEdit)) && (
+                <Box
+                  sx={{
+                    mt: { xs: 1, sm: 0 },
+                    width: '100px',
+                    height: '100px',
+                    border: '1px solid #ddd',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    borderRadius: '4px',
+                    backgroundColor: '#f5f5f5',
+                  }}
+                >
+                  <img
+                    src={imagePreviewUrl || (campaign?.imageUrl as string)}
+                    alt="Campaign Preview"
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                  />
+                </Box>
+              )}
+            </Grid>
+          </Grid>
+
+          <DialogActions>
+            <Button onClick={onClose}>Cancel</Button>
+            {isEdit && (
+              <Button type="submit" variant="contained">
+                Save
+              </Button>
+            )}
+          </DialogActions>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
-
-export default MobileCampaignForm;
+export default CategoryForm;
