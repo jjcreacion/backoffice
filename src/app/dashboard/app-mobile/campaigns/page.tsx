@@ -1,211 +1,264 @@
-"use client";
-import React, { useState, useEffect, ChangeEvent, MouseEvent } from 'react';
+"use client"
+
+import React, { useState, useEffect } from 'react';
 import {
-    Box,
-    TextField,
-    Typography,
-    Snackbar,
-    Alert,
-    CircularProgress,
-    Button,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
+  Box,
+  TextField,
+  Typography,
+  Button,
+  Snackbar,
+  Alert,
+  CircularProgress,
+  useTheme
 } from '@mui/material';
 import { FaSearch } from 'react-icons/fa';
-import axios from 'axios';
+import { CampaignTable, CampaignForm } from '../../components/app-mobile/campaigns/index';
+import { ChangeEvent, MouseEvent } from 'react';
 import PageContent from '../../components/dashboard/pageContent';
 import GlassCard from '../../components/dashboard/glassCard';
-import { MobileCampaign } from '../../../interface/MobileCampaign';
-import MobileCampaignTable  from '../../components/app-mobile/campaigns/MobileCampaignTable'; 
-import MobileCampaignForm from '../../components/app-mobile/campaigns/MobileCampaignTable'; 
+import { MobileCampaign } from "@interfaces/MobileCampaign";
 
+const CategoryPage: React.FC = () => {
+  const [campaigns, setCampaigns] = useState<MobileCampaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [isEdit, setIsedit] = useState(true);
+  const [campaign, setCampaign] = useState<MobileCampaign | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [orderBy, setOrderBy] = useState('name');
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
 
-const MobileCampaignsPage: React.FC = () => {
-    const [campaigns, setCampaigns] = useState<MobileCampaign[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [isEditMode, setIsEditMode] = useState(true);
-    const [selectedCampaign, setSelectedCampaign] = useState<MobileCampaign | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [orderBy, setOrderBy] = useState('createdAt');
-    const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const port = process.env.NEXT_PUBLIC_PORT;
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
-    const port = process.env.NEXT_PUBLIC_PORT || '5641';
-    const API_URL = `${baseUrl}:${port}/mobile-campaigns`;
-
-    const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
-        setSnackbarMessage(message);
-        setSnackbarSeverity(severity);
-        setSnackbarOpen(true);
-    };
-
-    const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-        setSnackbarOpen(false);
-    };
-
+  useEffect(() => {
     const fetchData = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await axios.get<MobileCampaign[]>(API_URL);
-            setCampaigns(Array.isArray(response.data) ? response.data : []);
-            showSnackbar('Campañas cargadas exitosamente.', 'success');
-        } catch (err: any) {
-            console.error('Error fetching campaigns:', err);
-            setError(err.message || 'Error al cargar las campañas.');
-            showSnackbar(`Error al cargar campañas: ${err.message || 'Error desconocido'}`, 'error');
-            setCampaigns([]);
-        } finally {
-            setLoading(false);
+      setLoading(true);
+      try {
+        const response = await fetch(`${baseUrl}:${port}/mobile-campaigns`, {
+          headers: {
+            'Content-Type': 'application/json', 
+          },
+        });
+  
+        if (!response.ok) {
+          const errorText = await response.text(); 
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText || 'No message'}`);
         }
+        const jsonData = await response.json();
+        setCampaigns(jsonData);
+
+      } catch (err: any) {
+        setError(err.message); 
+        console.error('Error fetching data:', err);
+        showSnackbar(`Error loading Category: ${err.message}`, 'error'); 
+      } finally {
+        setLoading(false);
+      }
     };
+  
+    fetchData();
+  }, []);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+  const handleEdit = (campaign: MobileCampaign) => {
+    setCampaign(campaign);
+    setIsedit(true);
+    setOpen(true);
+  };
 
-    const handleEdit = (campaign: MobileCampaign) => {
-        setSelectedCampaign(campaign);
-        setIsEditMode(true);
-        setIsFormOpen(true);
-    };
+  const handleCreate = () => {
+    setCampaign(null);
+    setIsedit(true);
+    setOpen(true);
+  };
 
-    const handleCreate = () => {
-        setSelectedCampaign(null);
-        setIsEditMode(true);
-        setIsFormOpen(true);
-    };
+   const handleView = (campaign: MobileCampaign) => {
+    setIsedit(false);
+    setCampaign(campaign);
+    setOpen(true);
+  };
 
-    const handleView = (campaign: MobileCampaign) => {
-        setSelectedCampaign(campaign);
-        setIsEditMode(false);
-        setIsFormOpen(true);
-    };
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`${baseUrl}:${port}/mobile-campaigns/${id}`, {
+        method: 'DELETE',
+      });
 
-    const handleDelete = async (id: number) => {
-        if (!window.confirm(`¿Estás seguro de que quieres eliminar la campaña con ID ${id}?`)) {
-            return;
-        }
-        try {
-            await axios.delete(`${API_URL}/${id}`);
-            showSnackbar('Campaña eliminada exitosamente.', 'success');
-            fetchData();
-        } catch (err: any) {
-            console.error('Error deleting campaign:', err);
-            showSnackbar(`Error al eliminar campaña: ${err.message || 'Error desconocido'}`, 'error');
-        }
-    };
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    const handleSort = (property: string) => {
-        const isAsc = orderBy === property && order === 'asc';
-        setOrder(isAsc ? 'desc' : 'asc');
-        setOrderBy(property);
-    };
+      setCampaigns(campaigns.filter((campaign) => campaign.campaignsId !== id));
+      showSnackbar('Successfully deleted Campaign', 'success');
+    } catch (error: any) {
+      console.error('Error when deleting Campaign: ', error);
+      showSnackbar('Error deleting Campaign', 'error');
+    }
+  };
 
-    const handleChangePage = (event: MouseEvent<HTMLButtonElement> | null, newPage: number) => {
-        setPage(newPage);
-    };
+const handleSave = async (campaign: MobileCampaign) => {
+   /*  try {
+    const method = campaign.campaignsId ? 'PATCH' : 'POST';
+    const url = `${baseUrl}:${port}/category/`;
+    let bodyData;
 
-    const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
-        setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
+    if (method === 'POST') {
+      bodyData = {
+        title: campaign.title,
+        description: campaign.description,
+      };
 
-    const filteredCampaigns = campaigns.filter((campaign) => {
-        const lowerCaseSearch = searchQuery.toLowerCase();
-        return campaign.title.toLowerCase().includes(lowerCaseSearch);
+     {
+        "campaignsId": 1,
+        "title": "Oferta Especial de Primavera",
+        "description": "Descuentos exclusivos en todos nuestros productos durante el mes de abril.",
+        "imageUrl": "https://ejemplo.com/imagenes/primavera.jpg",
+        "startDate": "2025-04-01T00:00:00Z",
+        "endDate": "2025-04-30T23:59:59Z",
+        "isActive": true,
+      }
+    
+    } else {
+      bodyData = {
+        pkCategory: campaign.campaignsId,
+        title: campaign.title,
+        description: category.description,
+        status: 1, 
+      };
+    }   
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bodyData),
     });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText || 'No message'}`);
+    }
 
-    const handleSaveSuccess = () => {
-        showSnackbar('Campaña guardada exitosamente.', 'success');
-        setIsFormOpen(false);
-        fetchData();
-    };
+    const updatedCategory = await response.json();
+    
+    if (method === 'POST') {
+      setCategories([...categories, updatedCategory]);
+      showSnackbar('Category created successfully', 'success');
+    } else {
+      setCategories(categories.map((p) => (p.pkCategory === updatedCategory.category.pkCategory ? updatedCategory.category : p)));
+      showSnackbar('Category successfully updated', 'success');
+    }
 
-    return (
-        <PageContent>
-            <GlassCard>
-                <Box sx={{ width: '100%', minHeight: 200, overflowY: 'auto', p: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h5" component="h2">
-                            Gestión de Campañas Móviles
-                        </Typography>
-                        <Button variant="contained" color="primary" onClick={handleCreate}>
-                            Crear Campaña
-                        </Button>
-                    </Box>
-
-                    <TextField
-                        fullWidth
-                        variant="outlined"
-                        placeholder="Buscar por título..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        InputProps={{
-                            startAdornment: <FaSearch style={{ marginRight: 8 }} />,
-                        }}
-                        sx={{ mb: 2 }}
-                    />
-
-                    {loading ? (
-                        <CircularProgress sx={{ display: 'block', margin: '20px auto' }} />
-                    ) : error ? (
-                        <Typography color="error" sx={{ textAlign: 'center', mt: 2 }}>{error}</Typography>
-                    ) : (
-                        <MobileCampaignTable
-                            campaigns={filteredCampaigns} {/* <-- CAMBIO CLAVE AQUÍ: Pasa filteredCampaigns */}
-                            onEdit={handleEdit}
-                            onView={handleView}
-                            onDelete={handleDelete}
-                            orderBy={orderBy}
-                            order={order}
-                            handleSort={handleSort}
-                            page={page}
-                            rowsPerPage={rowsPerPage}
-                            handleChangePage={handleChangePage}
-                            handleChangeRowsPerPage={handleChangeRowsPerPage}
-                        />
-                    )}
-
-                    <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-                        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: 'auto', minWidth: 300, fontSize: '1.2rem', padding: '1rem' }}>
-                            {snackbarMessage}
-                        </Alert>
-                    </Snackbar>
-
-                    <Dialog open={isFormOpen} onClose={() => setIsFormOpen(false)} maxWidth="md" fullWidth>
-                        <DialogTitle>{selectedCampaign ? (isEditMode ? 'Editar Campaña' : 'Ver Campaña') : 'Crear Nueva Campaña'}</DialogTitle>
-                        <DialogContent>
-                            <MobileCampaignForm
-                                campaigns={selectedCampaign}
-                                isEditMode={isEditMode}
-                                onSaveSuccess={handleSaveSuccess}
-                                showSnackbar={showSnackbar}
-                                onClose={() => setIsFormOpen(false)}
-                            />
-                        </DialogContent>
-                        <DialogActions>
-                            <Button onClick={() => setIsFormOpen(false)} color="secondary">
-                                Cerrar
-                            </Button>
-                        </DialogActions>
-                    </Dialog>
-                </Box>
-            </GlassCard>
-        </PageContent>
-    );
+    setOpen(false);
+    setCategory(null);
+  } catch (error: any) {
+    console.error('Error saving Category: ', error);
+    showSnackbar(`Error saving Category: ${error.message}`, 'error');
+  }*/
 };
 
-export default MobileCampaignsPage;
+  const handleSort = (property: string) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const handleChangePage = (event: MouseEvent<HTMLButtonElement> | null, newPage: number) => { 
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => { 
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    const lowerCaseSearch = searchQuery.toLowerCase();
+    const nameMatch = campaign.title.toLowerCase().includes(lowerCaseSearch);
+   
+    return nameMatch; 
+  });
+
+  const theme = useTheme();
+
+  return (
+    <PageContent >
+    <GlassCard >
+    <Box sx={{ width: '100%', minHeight: 200, overflowY: 'auto', p: 3 }} >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h5" component="h2">
+         Campaigns
+        </Typography>
+        <Button variant="contained" onClick={() => handleCreate()}>
+         Add New Campaign
+        </Button>
+      </Box>
+
+      <TextField
+        fullWidth
+        variant="outlined"
+        placeholder="Buscar..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        InputProps={{
+          startAdornment: <FaSearch style={{ marginRight: 8 }} />,
+        }}
+        sx={{ mb: 2 }}
+      />
+
+      {loading ? (
+        <CircularProgress />
+      ) : error ? (
+        <Typography color="error">{error}</Typography>
+      ) : (
+        <CampaignTable
+        campaigns={filteredCampaigns}
+        onEdit={handleEdit}
+        onView={handleView}
+        onDelete={handleDelete}
+        orderBy={orderBy}
+        order={order}
+        handleSort={handleSort}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        handleChangePage={handleChangePage} 
+        handleChangeRowsPerPage={handleChangeRowsPerPage} 
+        searchQuery={searchQuery}
+      />
+      )}
+
+     {/* <CategoryForm open={open} isEdit={isEdit} onClose={() => setOpen(false)} category={category} onSave={handleSave} /> */}
+
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: 'auto', minWidth: 300, fontSize: '1.2rem', padding: '1rem' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
+    </GlassCard>
+    </PageContent>
+  );
+};
+
+export default CategoryPage;
