@@ -117,9 +117,9 @@ const MobileCampaignTable: React.FC<CampaignsTableProps> = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {paginatedCampaigns.map((campaign) => (
+          {paginatedCampaigns.map((campaign, index) => (
             <TableRow key={campaign.campaignsId}>
-              <TableCell>{ campaign.campaignsId }</TableCell>
+              <TableCell>{ index + 1 }</TableCell>
               <TableCell>{ campaign.title }</TableCell>
               <TableCell>{campaign.startDate ? new Date(campaign.startDate).toLocaleDateString() : 'N/A'}</TableCell>
               <TableCell>{campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : 'N/A'}</TableCell>
