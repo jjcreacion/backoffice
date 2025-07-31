@@ -4,13 +4,38 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
 import io from 'socket.io-client';
 
+// Define una interfaz para los datos que llegan del endpoint REST
+interface RestInterest {
+    pk_interests: number;
+    campaignId: number;
+    fkUserId: number;
+    expressedAt: string;
+    campaign: {
+        title: string;
+    };
+    user: {
+        pkUser: number;
+        email: string;
+    };
+}
+
+// Interfaz para los datos que llegan del WebSocket
 interface CampaignInterestEvent {
     campaignId: number;
     campaignTitle: string;
-    userId: string | number; 
+    userId: string | number;
+    userEmail: string;
     timestamp: string;
     message: string;
     interestId?: number;
+}
+
+// Interfaz unificada para el estado del componente
+interface CombinedInterest {
+    id: number;
+    campaignTitle: string;
+    userIdentifier: string;
+    timestamp: string;
 }
 
 interface RealtimeCampaignInterestsProps {
@@ -18,79 +43,106 @@ interface RealtimeCampaignInterestsProps {
 }
 
 const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ showSnackbar }) => {
-    const [recentInterests, setRecentInterests] = useState<CampaignInterestEvent[]>([]);
+    const [recentInterests, setRecentInterests] = useState<CombinedInterest[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
     const port = process.env.NEXT_PUBLIC_PORT || '5641';
-    const WS_URL = `${baseUrl}:${port}`; 
+    const WS_URL = `${baseUrl}:${port}`;
+    const API_URL = `${baseUrl}:${port}/mobile-campaigns/interests/last-10`;
 
     useEffect(() => {
+        const fetchInitialInterests = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+                const data: RestInterest[] = await response.json();
+
+                const mappedInterests: CombinedInterest[] = data.map((item) => ({
+                    id: item.pk_interests,
+                    campaignTitle: item.campaign.title,
+                    userIdentifier: item.user.email,
+                    timestamp: item.expressedAt,
+                }));
+
+                setRecentInterests(mappedInterests);
+            } catch (error) {
+                console.error('Error fetching initial interests:', error);
+                showSnackbar('Error loading initial interests.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInitialInterests();
+
         const socket = io(WS_URL);
 
         socket.on('connect', () => {
-            console.log('RealtimeCampaignInterests: Conectado al servidor WebSocket.');
-            showSnackbar('Conectado al feed de intereses en tiempo real.', 'info');
+            console.log('RealtimeCampaignInterests: Connected to WebSocket server.');
         });
 
         socket.on('campaignInterest', (data: CampaignInterestEvent) => {
-            console.log('RealtimeCampaignInterests: ¡Interés en campaña recibido vía WebSocket!', data);
-            showSnackbar(`Nuevo interés: ${data.campaignTitle} por ${data.userId}`, 'info');
+            showSnackbar(`New interest: ${data.userEmail} in ${data.campaignTitle}`, 'info');
+
+            const newInterest: CombinedInterest = {
+                id: data.interestId || Date.now(),
+                campaignTitle: data.campaignTitle,
+                userIdentifier: data.userEmail,
+                timestamp: data.timestamp,
+            };
 
             setRecentInterests((prevInterests) => {
-                const updatedList = [data, ...prevInterests];
-                return updatedList.slice(0, 10); 
+                const updatedList = [newInterest, ...prevInterests];
+                return updatedList.slice(0, 10);
             });
         });
 
         socket.on('disconnect', () => {
-            console.log('RealtimeCampaignInterests: Desconectado del servidor WebSocket.');
-            showSnackbar('Desconectado del feed de intereses.', 'warning');
+            console.log('RealtimeCampaignInterests: Disconnected from WebSocket server.');
+            showSnackbar('Disconnected from interest feed.', 'warning');
         });
 
         socket.on('connect_error', (err) => {
-            console.error('RealtimeCampaignInterests: Error de conexión WebSocket:', err.message);
-            showSnackbar(`Error de conexión al feed: ${err.message}`, 'error');
+            console.error('RealtimeCampaignInterests: WebSocket connection error:', err.message);
+            showSnackbar(`Connection error to feed: ${err.message}`, 'error');
         });
 
         return () => {
             socket.disconnect();
-            console.log('RealtimeCampaignInterests: WebSocket desconectado al desmontar el componente.');
+            console.log('RealtimeCampaignInterests: WebSocket disconnected on component unmount.');
         };
-    }, [WS_URL, showSnackbar]); 
+    }, [API_URL, WS_URL, showSnackbar]);
 
     return (
         <Paper elevation={0} sx={{ maxHeight: 300, overflowY: 'auto', p: 0, borderRadius: '8px', backgroundColor: 'transparent' }}>
-            {recentInterests.length === 0 ? (
+            {loading ? (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                    Esperando intereses de campañas...
+                    Loading interests...
+                </Typography>
+            ) : recentInterests.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                    No recent campaign interests.
                 </Typography>
             ) : (
                 <List dense>
                     {recentInterests.map((interest, index) => (
-                        <React.Fragment key={interest.interestId || `${interest.campaignId}-${interest.userId}-${interest.timestamp}`}>
+                        <React.Fragment key={interest.id}>
                             <ListItem alignItems="flex-start" sx={{ py: 0.5 }}>
                                 <ListItemText
                                     primary={
-                                        <Typography
-                                            sx={{ display: 'inline' }}
-                                            component="span"
-                                            variant="body2"
-                                            color="text.primary"
-                                        >
-                                            {new Date(interest.timestamp).toLocaleTimeString()} -{' '}
+                                        <Typography component="span" variant="body2" color="text.primary">
+                                            <Typography component="span" variant="body2" fontWeight="bold">
+                                                {interest.userIdentifier}
+                                            </Typography>
+                                            {' showed interest in campaign '}
                                             <Typography component="span" variant="body2" fontWeight="bold">
                                                 {interest.campaignTitle}
                                             </Typography>
-                                        </Typography>
-                                    }
-                                    secondary={
-                                        <Typography
-                                            sx={{ display: 'block' }}
-                                            component="span"
-                                            variant="caption"
-                                            color="text.secondary"
-                                        >
-                                            Usuario: {interest.userId}
+                                            {` at ${new Date(interest.timestamp).toLocaleTimeString()}`}
                                         </Typography>
                                     }
                                 />
