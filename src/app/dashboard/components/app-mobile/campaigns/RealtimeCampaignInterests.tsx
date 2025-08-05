@@ -16,7 +16,6 @@ import {
 import io from 'socket.io-client';
 import NextLink from 'next/link';
 
-// Definiciones de tipos (interfaces)
 interface RestInterest {
     pk_interests: number;
     campaignId: number;
@@ -28,6 +27,11 @@ interface RestInterest {
     user: {
         pkUser: number;
         email: string;
+        person:{
+            contacts:{
+                pkContact:number;
+            }
+        }
     };
 }
 
@@ -45,9 +49,10 @@ interface CombinedInterest {
     id: number;
     campaignTitle: string;
     userIdentifier: string | number; 
+    contactIdentifier: number; 
     userEmail: string;
     timestamp: string;
-    isNew?: boolean; // Nuevo campo para el distintivo 'New'
+    isNew?: boolean; 
 }
 
 interface RealtimeCampaignInterestsProps {
@@ -73,9 +78,12 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
                 }
                 const data: RestInterest[] = await response.json();
 
+                console.log(data);
+                
                 const mappedInterests: CombinedInterest[] = data.map((item) => ({
                     id: item.pk_interests,
                     campaignTitle: item.campaign.title,
+                    contactIdentifier: item.user.person.contacts.pkContact,
                     userEmail: item.user.email,
                     userIdentifier: item.user.pkUser,
                     timestamp: item.expressedAt,
@@ -84,7 +92,6 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
                 setRecentInterests(mappedInterests);
             } catch (error) {
                 console.error('Error fetching initial interests:', error);
-                //showSnackbar('Error loading initial interests.', 'error');
             } finally {
                 setLoading(false);
             }
@@ -99,15 +106,14 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
         });
 
         socket.on('campaignInterest', (data: CampaignInterestEvent) => {
-           // showSnackbar(`New interest: ${data.userEmail} in ${data.campaignTitle}`, 'info');
-
+         
             const newInterest: CombinedInterest = {
                 id: data.interestId || Date.now(),
                 campaignTitle: data.campaignTitle,
                 userIdentifier: data.userId,
                 userEmail: data.userEmail,
                 timestamp: data.timestamp,
-                isNew: true, // Se marca como nuevo al recibir la notificación
+                isNew: true, 
             };
          
             setRecentInterests((prevInterests) => {
@@ -118,24 +124,21 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
 
         socket.on('disconnect', () => {
             console.log('RealtimeCampaignInterests: Disconnected from WebSocket server.');
-            //showSnackbar('Disconnected from interest feed.', 'warning');
         });
 
         socket.on('connect_error', (err) => {
             console.error('RealtimeCampaignInterests: WebSocket connection error:', err.message);
-            //showSnackbar(`Connection error to feed: ${err.message}`, 'error');
         });
         
-        // Timer para quitar el distintivo 'New' después de 2 minutos
         const timer = setTimeout(() => {
             setRecentInterests(prevInterests =>
                 prevInterests.map(interest => ({ ...interest, isNew: false }))
             );
-        }, 2 * 60 * 1000); // 2 minutos en milisegundos
+        }, 2 * 60 * 1000); 
 
         return () => {
             socket.disconnect();
-            clearTimeout(timer); // Limpia el temporizador para evitar fugas de memoria
+            clearTimeout(timer); 
             console.log('RealtimeCampaignInterests: WebSocket disconnected and timer cleared.');
         };
     }, [API_URL, WS_URL]);
@@ -154,7 +157,7 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
                 <List dense>
                     {recentInterests.map((interest, index) => (
                         <React.Fragment key={interest.id}>
-                            <ListItem alignItems="flex-start" sx={{ py: 0.5 }}>
+                            <ListItem alignItems="flex-start" sx={{ py: 0.1 }}>
                                 <Badge
                                     color="secondary"
                                     variant="dot"
@@ -166,7 +169,7 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
                                             border: '2px solid',
                                             borderColor: 'background.paper',
                                             padding: '0 4px',
-                                            backgroundColor: '#4caf50' // Color verde para el badge
+                                            backgroundColor: '#4caf50' 
                                         },
                                         width: '100%'
                                     }}
@@ -174,9 +177,9 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
                                     <ListItemText
                                         primary={
                                             <Typography component="span" variant="body2" color="text.primary">
-                                                <NextLink href={`/dashboard/contact_detail/${interest.userIdentifier}`} passHref>
+                                                <NextLink href={`/dashboard/contact_detail/${interest.contactIdentifier}`} passHref>
                                                     <Chip
-                                                        component="a" // Importante para que el Link de MUI funcione correctamente con NextLink
+                                                        component="a" 
                                                         label={interest.userEmail}
                                                         clickable
                                                         size="small"
