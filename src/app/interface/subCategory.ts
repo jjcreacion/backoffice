@@ -1,4 +1,6 @@
-import { Category } from "./category";
+import { Category } from "./category2";
+import { ClientType } from "./clientType";
+import { ServiceType } from "./serviceType";
 
 export interface SubCategory {
   pkSubCategory: number;
@@ -7,5 +9,10 @@ export interface SubCategory {
   status: number;
   createdAt: string | null;
   updatedAt: string | null;
-  category?: Category; 
+  category: Category;
+  clientType: ClientType;
+  serviceType: ServiceType;
 }
+
+  
+  

@@ -32,7 +32,6 @@ import {
 import { Delete as DeleteIcon, Visibility as VisibilityIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-// import { ServiceAddOn } from "../../interface/serviceAddOn";
 import { ServiceAddOn } from "../../../../interface/serviceAddOn";
 
 interface Service {
@@ -254,7 +253,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, service }) => 
             }
             const updatedAddon: ServiceAddOn = await response.json();
             setAddons(addons.map(addon =>
-                addon.pkAddon === updatedAddon.addon.pkAddon ? updatedAddon.addon : addon
+                addon.pkAddon === updatedAddon.pkAddon ? updatedAddon : addon
             ));
             setEditingAddon(null);
             formik.resetForm();
