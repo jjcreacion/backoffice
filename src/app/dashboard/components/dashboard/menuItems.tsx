@@ -37,7 +37,6 @@ const menuItems = [
       subItems: [
         { label: 'Category', icon: <CategoryIcon style={{ fontSize: iconSmallSubItems }} />, href: '/dashboard/settings/category' },
         { label: 'Sub-Category', icon: <ClassIcon style={{ fontSize: iconSmallSubItems }} />, href: '/dashboard/settings/sub-category' },
-        { label: 'Services ', icon: <FormatListBulletedIcon style={{ fontSize: iconSmallSubItems }} />, href: '/dashboard/settings/service' },
       ],
     },
   ];

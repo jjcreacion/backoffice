@@ -172,7 +172,7 @@ const SubCategoryTable: React.FC<SubCategoryTableProps> = ({
           >
             <DialogTitle id="alert-dialog-title">{"Confirm"}</DialogTitle>
             <DialogContent>
-              {"Are you sure you want to delete this Service?"}
+              {"Are you sure you want to delete this Sub Category?"}
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseDeleteConfirmation}>Cancel</Button>

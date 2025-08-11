@@ -88,15 +88,13 @@ const ServicePage: React.FC = () => {
         const fetchSelectData = async () => {
             setLoadingOptions(true);
             try {
-                const [categoriesResponse, subCategoriesResponse, serviceTypesResponse, clientTypesResponse] = await Promise.all([
+                const [categoriesResponse, serviceTypesResponse, clientTypesResponse] = await Promise.all([
                     fetch(`${baseUrl}:${port}/category/findAll`),
-                    fetch(`${baseUrl}:${port}/subCategory/findAll`),
-                    fetch(`${baseUrl}:${port}/subCategoriestype/findAll`),
+                    fetch(`${baseUrl}:${port}/servicestype/findAll`),
                     fetch(`${baseUrl}:${port}/clientType/findAll`),
                 ]);
 
                 if (!categoriesResponse.ok) throw new Error(`HTTP error! status: ${categoriesResponse.status}`);
-                if (!subCategoriesResponse.ok) throw new Error(`HTTP error! status: ${subCategoriesResponse.status}`);
                 if (!serviceTypesResponse.ok) throw new Error(`HTTP error! status: ${serviceTypesResponse.status}`);
                 if (!clientTypesResponse.ok) throw new Error(`HTTP error! status: ${clientTypesResponse.status}`);
 
@@ -171,18 +169,19 @@ const ServicePage: React.FC = () => {
 
             if (method === 'POST') {
                 bodyData = {
-                    fkSubCategory: parseInt(serviceData.fkSubCategory, 10),
                     name: serviceData.name,
                     description: serviceData.description,
+                    fkCategory: parseInt(serviceData.fkCategory, 10),
                     fkClientType: serviceData.fkClientType !== null ? parseInt(serviceData.fkClientType, 10) : null,
                     fkServiceType: serviceData.fkServiceType !== null ? parseInt(serviceData.fkServiceType, 10) : null,
                 };
+                
             } else {
                 bodyData = {
-                    pkService: currentSubCategory?.pkSubCategory,
-                    fkSubCategory: parseInt(serviceData.fkSubCategory, 10),
+                    pkSubCategory: currentSubCategory?.pkSubCategory,
                     name: serviceData.name,
                     description: serviceData.description,
+                    fkCategory: parseInt(serviceData.fkCategory, 10),
                     fkClientType: serviceData.fkClientType !== null ? parseInt(serviceData.fkClientType, 10) : null,
                     fkServiceType: serviceData.fkServiceType !== null ? parseInt(serviceData.fkServiceType, 10) : null,
                     status: parseInt(serviceData.status, 10),
@@ -201,16 +200,17 @@ const ServicePage: React.FC = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const updatedService = await response.json();
+            const updatedSubCategory = await response.json();
+            console.log(updatedSubCategory);
 
             if (method === 'POST') {
-                setSubCategories([...subCategories, updatedService]);
-                showSnackbar('Service created successfully', 'success');
+                setSubCategories([...subCategories, updatedSubCategory]);
+                showSnackbar('Sub-Category created successfully', 'success');
             } else {
                 setSubCategories(subCategories.map((s) =>
-                    s.pkSubCategory === updatedService.service.pkService ? updatedService.service : s
+                    s.pkSubCategory === updatedSubCategory.service.pkSubCategory ? updatedSubCategory.service : s
                 ));
-                showSnackbar('Service successfully updated', 'success');
+                showSnackbar('Sub-Categoru successfully updated', 'success');
             }
 
             setOpen(false);
@@ -263,10 +263,10 @@ const ServicePage: React.FC = () => {
                 <Box sx={{ width: '100%', p: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                         <Typography variant="h5" component="h2">
-                            Services
+                            Sub-Category
                         </Typography>
                         <Button variant="contained" onClick={() => handleCreate()}>
-                            Add New Service
+                            Add Sub-Category
                         </Button>
                     </Box>
 
@@ -316,11 +316,14 @@ const ServicePage: React.FC = () => {
                         clientTypes={selectOptions.clientTypes}
                     /> 
 
-                    <ServiceAddOn
-                        open={openAddOn}
-                        onClose={() => setOpenAddOn(false)}
-                        subCategory={currentSubCategory}
-                    />
+                    {openAddOn && currentSubCategory && (
+                        <ServiceAddOn
+                            open={openAddOn}
+                            onClose={() => setOpenAddOn(false)}
+                            subCategory={currentSubCategory}
+                        />
+                    )}
+
 
                     <Snackbar
                         open={snackbarOpen}

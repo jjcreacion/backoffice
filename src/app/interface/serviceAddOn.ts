@@ -1,6 +1,6 @@
 export interface ServiceAddOn {
     pkAddon: number;
-    isReail: number;
+    isRetail: number;
     name: string;
     description: string;
     contentWeb: string;

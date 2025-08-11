@@ -80,7 +80,7 @@ const SunCategoryFrom: React.FC<ServiceFormProps> = ({
                 fkClientType: values.fkClientType ? parseInt(values.fkClientType.toString(), 10) : null,
                 fkServiceType: values.fkServiceType ? parseInt(values.fkServiceType.toString(), 10) : null,
                 status: values.status,
-                pkSubCategory: subCategory?.pkSubCategory,
+                fkCategory: values.fkCategory ? parseInt(values.fkCategory.toString(), 10) : null,
             };
             onSave(payload);
         },
