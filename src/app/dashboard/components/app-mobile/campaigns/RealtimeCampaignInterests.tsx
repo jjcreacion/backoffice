@@ -10,7 +10,6 @@ import {
     ListItemText, 
     Divider, 
     Chip, 
-    Link,
     Badge 
 } from '@mui/material';
 import io from 'socket.io-client';
@@ -28,9 +27,7 @@ interface RestInterest {
         pkUser: number;
         email: string;
         person:{
-            contacts:{
-                pkContact:number;
-            }
+            contacts: Contact[];
         }
     };
 }
@@ -39,6 +36,7 @@ interface CampaignInterestEvent {
     campaignId: number;
     campaignTitle: string;
     userId: string | number;
+    contactIdentifier: string | number; 
     userEmail: string;
     timestamp: string;
     message: string;
@@ -49,10 +47,14 @@ interface CombinedInterest {
     id: number;
     campaignTitle: string;
     userIdentifier: string | number; 
-    contactIdentifier: number; 
+    contactIdentifier: string | number;
     userEmail: string;
     timestamp: string;
     isNew?: boolean; 
+}
+
+interface Contact {
+    pkContact: number;
 }
 
 interface RealtimeCampaignInterestsProps {
@@ -77,17 +79,21 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
                     throw new Error(`HTTP Error: ${response.status}`);
                 }
                 const data: RestInterest[] = await response.json();
-
-                console.log(data);
                 
-                const mappedInterests: CombinedInterest[] = data.map((item) => ({
-                    id: item.pk_interests,
-                    campaignTitle: item.campaign.title,
-                    contactIdentifier: item.user.person.contacts.pkContact,
-                    userEmail: item.user.email,
-                    userIdentifier: item.user.pkUser,
-                    timestamp: item.expressedAt,
-                }));
+                const mappedInterests: CombinedInterest[] = data.map((item) => {
+                    const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+                    const expressedTimestamp = new Date(item.expressedAt).getTime();
+                    
+                    return {
+                        id: item.pk_interests,
+                        campaignTitle: item.campaign.title,
+                        contactIdentifier: item.user.person.contacts[0]?.pkContact,
+                        userEmail: item.user.email,
+                        userIdentifier: item.user.pkUser,
+                        timestamp: item.expressedAt,
+                        isNew: expressedTimestamp > fifteenMinutesAgo, 
+                    };
+                });
 
                 setRecentInterests(mappedInterests);
             } catch (error) {
@@ -106,11 +112,11 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
         });
 
         socket.on('campaignInterest', (data: CampaignInterestEvent) => {
-         
             const newInterest: CombinedInterest = {
                 id: data.interestId || Date.now(),
                 campaignTitle: data.campaignTitle,
                 userIdentifier: data.userId,
+                contactIdentifier: data.contactIdentifier,
                 userEmail: data.userEmail,
                 timestamp: data.timestamp,
                 isNew: true, 
@@ -130,15 +136,23 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
             console.error('RealtimeCampaignInterests: WebSocket connection error:', err.message);
         });
         
-        const timer = setTimeout(() => {
-            setRecentInterests(prevInterests =>
-                prevInterests.map(interest => ({ ...interest, isNew: false }))
-            );
-        }, 2 * 60 * 1000); 
+        const timer = setInterval(() => {
+            setRecentInterests(prevInterests => {
+                const now = Date.now();
+                return prevInterests.map(interest => {
+                    const expressedTimestamp = new Date(interest.timestamp).getTime();
+                    const fifteenMinutesAgo = now - 15 * 60 * 1000;
+                    return {
+                        ...interest,
+                        isNew: expressedTimestamp > fifteenMinutesAgo,
+                    };
+                });
+            });
+        }, 60 * 1000); 
 
         return () => {
             socket.disconnect();
-            clearTimeout(timer); 
+            clearInterval(timer);
             console.log('RealtimeCampaignInterests: WebSocket disconnected and timer cleared.');
         };
     }, [API_URL, WS_URL]);
@@ -158,44 +172,40 @@ const RealtimeCampaignInterests: React.FC<RealtimeCampaignInterestsProps> = ({ s
                     {recentInterests.map((interest, index) => (
                         <React.Fragment key={interest.id}>
                             <ListItem alignItems="flex-start" sx={{ py: 0.1 }}>
-                                <Badge
-                                    color="secondary"
-                                    variant="dot"
-                                    invisible={!interest.isNew}
-                                    sx={{
-                                        '& .MuiBadge-badge': {
-                                            right: -10,
-                                            top: 10,
-                                            border: '2px solid',
-                                            borderColor: 'background.paper',
-                                            padding: '0 4px',
-                                            backgroundColor: '#4caf50' 
-                                        },
-                                        width: '100%'
-                                    }}
-                                >
-                                    <ListItemText
-                                        primary={
-                                            <Typography component="span" variant="body2" color="text.primary">
-                                                <NextLink href={`/dashboard/contact_detail/${interest.contactIdentifier}`} passHref>
-                                                    <Chip
-                                                        component="a" 
-                                                        label={interest.userEmail}
-                                                        clickable
-                                                        size="small"
-                                                        color="primary"
-                                                        sx={{ mr: 1 }}
-                                                    />
-                                                </NextLink>
-                                                {' showed interest in campaign '}
-                                                <Typography component="span" variant="body2" fontWeight="bold">
-                                                    {interest.campaignTitle}
-                                                </Typography>
-                                                {` at ${new Date(interest.timestamp).toLocaleTimeString()}`}
+                                <ListItemText
+                                    primary={
+                                        <Typography component="span" variant="body2" color="text.primary">
+                                            <NextLink href={`/dashboard/contact_detail/${interest.contactIdentifier}`} passHref>
+                                                <Chip
+                                                    label={interest.userEmail}
+                                                    clickable
+                                                    size="small"
+                                                    color="primary"
+                                                    sx={{ mr: 1 }}
+                                                />
+                                            </NextLink>
+                                            {' showed interest in campaign '}
+                                            <Typography component="span" variant="body2" fontWeight="bold">
+                                                {interest.campaignTitle}
                                             </Typography>
-                                        }
-                                    />
-                                </Badge>
+                                            {` at ${new Date(interest.timestamp).toLocaleString()}`}
+                                            {interest.isNew && (
+                                                <Chip
+                                                    label="New"
+                                                    size="small"
+                                                    sx={{
+                                                        ml: 1,
+                                                        backgroundColor: '#e6b800', 
+                                                        color: 'black',
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 'bold',
+                                                        height: '18px'
+                                                    }}
+                                                />
+                                            )}
+                                        </Typography>
+                                    }
+                                />
                             </ListItem>
                             {index < recentInterests.length - 1 && <Divider component="li" sx={{ my: 0.5 }} />}
                         </React.Fragment>
