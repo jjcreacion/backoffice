@@ -33,16 +33,12 @@ import { Delete as DeleteIcon, Visibility as VisibilityIcon, Close as CloseIcon 
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { ServiceAddOn } from "../../../../interface/serviceAddOn";
-
-interface Service {
-    pkService: number;
-    name: string;
-}
+import { SubCategory } from "../../../../interface/subCategory";
 
 interface ServiceFormProps {
     open: boolean;
     onClose: () => void;
-    subCategory: Service | null;
+    subCategory: SubCategory | null;
 }
 
 const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory }) => {
@@ -89,10 +85,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
         enableReinitialize: true,
         onSubmit: async (values) => {
             
-            console.log(values);
-            console.log(subCategory?.pkService);
-
-            if (!subCategory?.pkService) {
+            if (!subCategory?.pkSubCategory) {
                 console.error('Cannot save addon as there is no associated service.');
                 return;
             }
@@ -111,10 +104,10 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
 
     useEffect(() => {
         const fetchServiceAddons = async () => {
-            if (subCategory?.pkService) {
+            if (subCategory?.pkSubCategory) {
                 setLoadingAddons(true);
                 try {
-                    const response = await fetch(`${apiUrl}/serviceAddon/getAllByService/${subCategory.pkService}`);
+                    const response = await fetch(`${apiUrl}/serviceAddon/getAllByService/${subCategory.pkSubCategory}`);
                     if (!response.ok) {
                         const errorData = await response.json();
                         throw new Error(errorData.message || `Error fetching addons: ${response.status}`);
@@ -123,12 +116,12 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
                     if (responseData && Array.isArray(responseData.addons)) {
                         const formattedAddons: ServiceAddOn[] = responseData.addons.map(item => ({
                             pkAddon: item.pkAddon,
-                            isReail: item.isReail,
+                            isRetail: item.isRetail,
                             name: item.name,
                             description: item.description,
                             contentWeb: item.contentWeb,
                             price: item.price,
-                            fkService: subCategory.pkService,
+                            fkService: subCategory.pkSubCategory,
                             status: item.status,
                         }));
                         setAddons(formattedAddons);
@@ -152,7 +145,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
 
         fetchServiceAddons();
         setAddonUpdated(false); 
-    }, [subCategory?.pkService, apiUrl]);
+    }, [subCategory?.pkSubCategory, apiUrl]);
 
     useEffect(() => {
         if (editingAddon) {
@@ -208,7 +201,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
     };
 
     const handleSaveAddon = async (values: typeof initialValues) => {
-        if (!subCategory?.pkService) {
+        if (!subCategory?.pkSubCategory) {
             console.error('Cannot save addon as there is no associated service.');
             return;
         }
@@ -218,7 +211,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ ...values, fkService: subCategory.pkService }),
+                body: JSON.stringify({ ...values, fkService: subCategory.pkSubCategory }),
             });
             if (!response.ok) {
                 const errorData = await response.json();
@@ -235,6 +228,7 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
         }
     };
 
+  
     const handleUpdateAddon = async (values: typeof initialValues) => {
         if (!editingAddon) return;
         try {
@@ -247,18 +241,25 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ open, onClose, subCategory })
                     pkAddon: editingAddon.pkAddon,
                     ...values,
                     status: editingAddon.status !== undefined ? editingAddon.status : 1,
-                    fkService: subCategory?.pkService,
+                    fkService: subCategory?.pkSubCategory,
                 }),
             });
-
+    
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || `Error updating addon: ${response.status}`);
             }
-            const updatedAddon: ServiceAddOn = await response.json();
+            
+            const updatedAddon: ServiceAddOn = {
+                ...editingAddon, 
+                ...values,
+                status: editingAddon.status !== undefined ? editingAddon.status : 1,
+            };
+            
             setAddons(addons.map(addon =>
                 addon.pkAddon === updatedAddon.pkAddon ? updatedAddon : addon
             ));
+            
             setEditingAddon(null);
             formik.resetForm();
             showSnackbar('Addon updated successfully.', 'success');
