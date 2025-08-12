@@ -1,7 +1,7 @@
 'use client';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
   Alert,
@@ -18,44 +18,7 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import { styled } from "@mui/system";
 import { FaEnvelope, FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
-
-const StyledCard = styled(Card)(({ theme }) => ({
-  maxWidth: 450,
-  width: "100%",
-  backgroundColor: "rgba(255, 255, 255, 0.95)",
-  backdropFilter: "blur(10px)",
-  boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)"
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-  background: "linear-gradient(45deg, #B22222 30%, #36454F 90%)",
-  color: "white",
-  padding: "12px",
-  "&:hover": {
-    background: "linear-gradient(45deg, #36454F 30%, #B22222 90%)",
-  },
-}));
-
-const BackgroundContainer = styled(Box)({
-  minHeight: "100vh",
-  background: "linear-gradient(135deg, #36454F 0%, #B22222 100%)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "20px",
-});
-
-const SocialButton = styled(Button)({
-  flex: 1,
-  borderRadius: "4px",
-  padding: "8px",
-  color: "#36454F",
-  "&:hover": {
-    backgroundColor: "rgba(54, 69, 79, 0.1)",
-  },
-});
 
 interface LoginResponse {
   accessToken: string;
@@ -69,10 +32,16 @@ const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
   const port = process.env.NEXT_PUBLIC_PORT || '3001';
+
+  // Evitar problemas de hidratación
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -106,26 +75,24 @@ const LoginPage = () => {
 
       const { accessToken, pkUser } = response.data;
 
-      // Obtener datos completos del usuario
-      const userResponse = await axios.get(`${baseUrl}:${port}/user/findOne/${pkUser}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      });
-
-      const userData = userResponse.data;
-
-      // Guardar datos en storage
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('access_token', accessToken);
-      storage.setItem('user', JSON.stringify(userData));
-      storage.setItem('pkUser', pkUser.toString());
-
-      // Configurar axios para futuras requests
+      // Configurar axios inmediatamente
       axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
-      // Redirigir al dashboard
+      // Guardar datos inmediatamente
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('access_token', accessToken);
+      storage.setItem('pkUser', pkUser.toString());
+
+      // Redirigir inmediatamente
       router.push('/dashboard');
+
+      // Obtener datos del usuario en background
+      try {
+        const userResponse = await axios.get(`${baseUrl}:${port}/user/findOne/${pkUser}`);
+        storage.setItem('user', JSON.stringify(userResponse.data));
+      } catch (userError) {
+        console.warn('Failed to fetch user data:', userError);
+      }
 
     } catch (err: any) {
       console.error('Login error:', err);
@@ -148,18 +115,64 @@ const LoginPage = () => {
     setShowPassword(!showPassword);
   };
 
+  // No renderizar hasta que esté montado en el cliente
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <BackgroundContainer>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #36454F 0%, #B22222 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
       <Container maxWidth="sm">
-        <StyledCard>
+        <Card
+          sx={{
+            maxWidth: 450,
+            width: "100%",
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(10px)",
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+          }}
+        >
           <CardContent sx={{ p: 4 }}>
             {/* Header */}
             <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <img src={"/images/icon-tnb.png"} alt="Login Image" style={{ maxWidth: '70px', marginBottom: '1rem' }} />
-              <Typography variant="h4" component="h1" sx={{ color: "#36454F", fontWeight: "bold" }}>
+              <Box
+                component="img"
+                src="/images/icon-tnb.png"
+                alt="TNB Logo"
+                sx={{
+                  maxWidth: '70px',
+                  marginBottom: '1rem',
+                  height: 'auto',
+                }}
+              />
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                sx={{ 
+                  color: "#36454F", 
+                  fontWeight: "bold",
+                  textAlign: 'center',
+                }}
+              >
                 Welcome Back
               </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: "text.secondary", 
+                  mt: 1,
+                  textAlign: 'center',
+                }}
+              >
                 Please sign in to continue
               </Typography>
             </Box>
@@ -244,28 +257,42 @@ const LoginPage = () => {
                   sx={{ 
                     color: "#B22222", 
                     cursor: loading ? "default" : "pointer", 
-                    "&:hover": { textDecoration: loading ? "none" : "underline" } 
+                    "&:hover": { textDecoration: loading ? "none" : "underline" },
+                    userSelect: 'none',
                   }}
                 >
                   Forgot Password?
                 </Typography>
               </Box>
 
-              <StyledButton
+              <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2 }}
                 disabled={loading}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  background: "linear-gradient(45deg, #B22222 30%, #36454F 90%)",
+                  color: "white",
+                  padding: "12px",
+                  "&:hover": {
+                    background: "linear-gradient(45deg, #36454F 30%, #B22222 90%)",
+                  },
+                  "&:disabled": {
+                    background: "rgba(0, 0, 0, 0.12)",
+                    color: "rgba(0, 0, 0, 0.26)",
+                  },
+                }}
               >
                 {loading ? "Signing In..." : "Sign In"}
-              </StyledButton>
+              </Button>
             </Box>
           </CardContent>
-        </StyledCard>
+        </Card>
       </Container>
-    </BackgroundContainer>
+    </Box>
   );
 };
 
