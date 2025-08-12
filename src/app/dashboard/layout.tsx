@@ -1,36 +1,36 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { styled, useTheme, ThemeProvider, createTheme } from '@mui/material/styles';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import CallIcon from '@mui/icons-material/Call';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import MenuIcon from '@mui/icons-material/Menu';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import { CircularProgress, Divider, Menu, MenuItem } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
+import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
+import Collapse from '@mui/material/Collapse';
 import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import Collapse from '@mui/material/Collapse';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import Avatar from '@mui/material/Avatar';
-import Badge from '@mui/material/Badge';
-import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import CallIcon from '@mui/icons-material/Call';
+import { ThemeProvider, styled, useTheme } from '@mui/material/styles';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import axios from 'axios';
 import Image from 'next/image';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { Switch } from '@mui/material';
-import lightTheme from '../styles/lightTheme';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import darkTheme from '../styles/darkTheme';
+import lightTheme from '../styles/lightTheme';
 import menuItems from './components/dashboard/menuItems';
 
 const drawerWidth = 220;
@@ -161,8 +161,66 @@ const DashboardLayout = ({ children }) => {
   const theme = useTheme();
   const [open, setOpen] = useState(true);
   const [openSubMenu, setOpenSubMenu] = useState({});
-  const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const router = useRouter();
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
+  const port = process.env.NEXT_PUBLIC_PORT || '3001';
+
+  // Verificar autenticación al cargar
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
+        
+        if (!token) {
+          router.push('/');
+          return;
+        }
+
+        // Configurar token para axios
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        } else {
+          // Si no hay datos de usuario, obtenerlos del backend
+          const pkUser = localStorage.getItem('pkUser') || sessionStorage.getItem('pkUser');
+          if (pkUser) {
+            const response = await axios.get(`${baseUrl}:${port}/user/findOne/${pkUser}`);
+            setUser(response.data);
+            
+            // Guardar en storage
+            const storage = localStorage.getItem('access_token') ? localStorage : sessionStorage;
+            storage.setItem('user', JSON.stringify(response.data));
+          }
+        }
+      } catch (error) {
+        console.error('Auth verification failed:', error);
+        handleLogout();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router, baseUrl, port]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('pkUser');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('pkUser');
+    delete axios.defaults.headers.common['Authorization'];
+    router.push('/');
+  };
 
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -184,8 +242,50 @@ const DashboardLayout = ({ children }) => {
     setOpen(!open);
   };
 
+  const handleProfileMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Mostrar loading mientras verificamos autenticación
+  if (loading) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: "linear-gradient(135deg, #36454F 0%, #B22222 100%)"
+      }}>
+        <CircularProgress size={60} sx={{ color: 'white' }} />
+      </Box>
+    );
+  }
+
+  // Función para obtener el nombre del usuario
+  const getUserDisplayName = () => {
+    if (!user) return 'Usuario';
+    
+    if (user.person) {
+      const { firstName, lastName } = user.person;
+      if (firstName && lastName) {
+        return `${firstName} ${lastName}`;
+      }
+      if (firstName) return firstName;
+      if (lastName) return lastName;
+    }
+    
+    if (user.username) return user.username;
+    if (user.email) return user.email.split('@')[0];
+    
+    return 'Usuario';
+  };
+
   return (
-    <ThemeProvider theme={darkMode ? darkTheme : lightTheme} >
+    <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
       <Box sx={{ display: 'flex' }}>
         <AppBarStyled position="fixed" open={open}>
           <Toolbar>
@@ -196,31 +296,64 @@ const DashboardLayout = ({ children }) => {
               edge="start"
               sx={{ mr: 2, ...(open && { display: { xs: 'block', sm: 'none' } }) }}
             >
+              <MenuIcon />
             </IconButton>
+            
             <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-              <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+              <Link href="/dashboard" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h6" noWrap component="div" sx={{ display: { xs: 'none', sm: 'block' } }}>
                   TNB - WorkSpaces
                 </Typography>
               </Link>
             </Box>
+            
             <IconButton color="inherit">
               <Badge badgeContent={4} color="error">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
+            
             <IconButton color="inherit">
               <CallIcon sx={{ mr: { xs: 0, sm: 1 } }} />
             </IconButton>
-            <Typography sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>Johann Gonzalez</Typography>
-            <IconButton color="inherit">
+            
+            <Typography sx={{ ml: 1, display: { xs: 'none', sm: 'block' } }}>
+              {getUserDisplayName()}
+            </Typography>
+            
+            <IconButton color="inherit" onClick={handleProfileMenuOpen}>
               <AccountCircle />
             </IconButton>
+            
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleProfileMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem onClick={handleProfileMenuClose}>
+                <AccountCircle sx={{ mr: 1 }} />
+                My Profile
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleLogout}>
+                Logout
+              </MenuItem>
+            </Menu>
+            
             <IconButton onClick={toggleDarkMode} color="inherit">
               {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
           </Toolbar>
         </AppBarStyled>
+        
         <GradientDrawer variant="permanent" open={open}>
           <DrawerHeader sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton onClick={toggleMenu}>
@@ -228,10 +361,10 @@ const DashboardLayout = ({ children }) => {
             </IconButton>
             {open && (
               <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-                <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', height: 'auto' }}>
+                <Link href="/dashboard" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', height: 'auto' }}>
                   <Image
                     src="/images/icon-tnb.png"
-                    alt="ServiFy Logo"
+                    alt="TNB Logo"
                     height={20}
                     width={50}
                     style={{ display: 'block' }}
@@ -240,6 +373,7 @@ const DashboardLayout = ({ children }) => {
               </Box>
             )}
           </DrawerHeader>
+          
           <List>
             {menuItems.map((item) => (
               <React.Fragment key={item.label}>
@@ -282,6 +416,7 @@ const DashboardLayout = ({ children }) => {
             ))}
           </List>
         </GradientDrawer>
+        
         <Main open={open}>
           {children}
         </Main>
