@@ -1,39 +1,39 @@
-'use client';
+'use client'
 
 import {
-    Alert,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    CircularProgress,
-    Container,
-    InputAdornment,
-    TextField,
-    Typography,
-} from '@mui/material';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { FaArrowLeft, FaEnvelope } from 'react-icons/fa';
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Container,
+  InputAdornment,
+  TextField,
+  Typography,
+} from '@mui/material'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { FaArrowLeft, FaEnvelope } from 'react-icons/fa'
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const router = useRouter();
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setMessage('');
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setMessage('')
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
-      const port = process.env.NEXT_PUBLIC_PORT || '3000';
-      const backendUrl = `${baseUrl}:${port}`;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost'
+      const port = process.env.NEXT_PUBLIC_PORT || '3000'
+      const backendUrl = `${baseUrl}:${port}`
 
       const response = await fetch(`${backendUrl}/auth/forgot-password`, {
         method: 'POST',
@@ -41,21 +41,23 @@ export default function ForgotPasswordPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (response.ok) {
-        setMessage('Se ha enviado un enlace de recuperación a tu correo electrónico.');
+        setMessage(
+          'Se ha enviado un enlace de recuperación a tu correo electrónico.'
+        )
       } else {
-        setError(data.message || 'Error al enviar el correo de recuperación');
+        setError(data.message || 'Error al enviar el correo de recuperación')
       }
     } catch (error) {
-      setError('Error de conexión. Intenta nuevamente.');
+      setError('Error de conexión. Intenta nuevamente.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <Box
@@ -118,7 +120,8 @@ export default function ForgotPasswordPage() {
                   maxWidth: '300px',
                 }}
               >
-                Enter your email address and we'll send you a link to reset your password
+                Enter your email address and we'll send you a link to reset your
+                password
               </Typography>
             </Box>
 
@@ -215,5 +218,5 @@ export default function ForgotPasswordPage() {
         </Card>
       </Container>
     </Box>
-  );
+  )
 }

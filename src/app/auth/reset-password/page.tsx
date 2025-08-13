@@ -1,90 +1,90 @@
-'use client';
+'use client'
 
 import {
-    Alert,
-    Box,
-    Button,
-    Card,
-    CardContent,
-    CircularProgress,
-    Container,
-    IconButton,
-    InputAdornment,
-    TextField,
-    Typography,
-} from '@mui/material';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { FaCheck, FaEye, FaEyeSlash, FaLock } from 'react-icons/fa';
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Container,
+  IconButton,
+  InputAdornment,
+  TextField,
+  Typography,
+} from '@mui/material'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { FaCheck, FaEye, FaEyeSlash, FaLock } from 'react-icons/fa'
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
 
   useEffect(() => {
     if (!token) {
-      setError('Invalid or expired reset token.');
+      setError('Invalid or expired reset token.')
     }
-  }, [token]);
+  }, [token])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+    e.preventDefault()
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+      setError('Passwords do not match')
+      return
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
+      setError('Password must be at least 6 characters')
+      return
     }
 
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
-      const port = process.env.NEXT_PUBLIC_PORT || '3000';
-      const backendUrl = `${baseUrl}:${port}`;
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost'
+      const port = process.env.NEXT_PUBLIC_PORT || '3000'
+      const backendUrl = `${baseUrl}:${port}`
 
       const response = await fetch(`${backendUrl}/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           token,
-          password 
+          password,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (response.ok) {
-        setSuccess(true);
+        setSuccess(true)
         setTimeout(() => {
-          router.push('/');
-        }, 3000);
+          router.push('/')
+        }, 3000)
       } else {
-        setError(data.message || 'Error resetting password');
+        setError(data.message || 'Error resetting password')
       }
     } catch (error) {
-      setError('Connection error. Please try again.');
+      setError('Connection error. Please try again.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   if (success) {
     return (
@@ -150,7 +150,8 @@ export default function ResetPasswordPage() {
                     textAlign: 'center',
                   }}
                 >
-                  Your password has been successfully reset. You will be redirected to the login page.
+                  Your password has been successfully reset. You will be
+                  redirected to the login page.
                 </Typography>
               </Box>
               <CircularProgress sx={{ color: '#B22222' }} />
@@ -158,7 +159,7 @@ export default function ResetPasswordPage() {
           </Card>
         </Container>
       </Box>
-    );
+    )
   }
 
   return (
@@ -285,7 +286,9 @@ export default function ResetPasswordPage() {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         edge="end"
                         disabled={loading || !token}
                       >
@@ -347,5 +350,5 @@ export default function ResetPasswordPage() {
         </Card>
       </Container>
     </Box>
-  );
+  )
 }
