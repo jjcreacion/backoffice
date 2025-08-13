@@ -172,6 +172,8 @@ const ServicePage: React.FC = () => {
                     name: serviceData.name,
                     description: serviceData.description,
                     fkCategory: parseInt(serviceData.fkCategory, 10),
+                    priceFrom: serviceData.priceFrom,
+                    priceTo: serviceData.priceTo,
                     fkClientType: serviceData.fkClientType !== null ? parseInt(serviceData.fkClientType, 10) : null,
                     fkServiceType: serviceData.fkServiceType !== null ? parseInt(serviceData.fkServiceType, 10) : null,
                 };
@@ -181,6 +183,8 @@ const ServicePage: React.FC = () => {
                     pkSubCategory: currentSubCategory?.pkSubCategory,
                     name: serviceData.name,
                     description: serviceData.description,
+                    priceFrom: serviceData.priceFrom,
+                    priceTo: serviceData.priceTo,
                     fkCategory: parseInt(serviceData.fkCategory, 10),
                     fkClientType: serviceData.fkClientType !== null ? parseInt(serviceData.fkClientType, 10) : null,
                     fkServiceType: serviceData.fkServiceType !== null ? parseInt(serviceData.fkServiceType, 10) : null,

@@ -12,8 +12,9 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    CircularProgress,
     FormHelperText,
+    InputAdornment, 
+    Box, 
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -39,6 +40,8 @@ const validationSchema = Yup.object({
     fkCategory: Yup.number().required('Category is required').nullable(),
     fkClientType: Yup.number().required('Client Type is required').nullable(),
     fkServiceType: Yup.number().required('Service Type is required').nullable(),
+    priceFrom: Yup.number().nullable().min(0, 'Price must be a positive number'),
+    priceTo: Yup.number().nullable().min(0, 'Price must be a positive number'),
 });
 
 const SunCategoryFrom: React.FC<ServiceFormProps> = ({
@@ -58,9 +61,10 @@ const SunCategoryFrom: React.FC<ServiceFormProps> = ({
         fkClientType: 0,
         fkServiceType: 0,
         status: 1,
+        priceFrom: 0,
+        priceTo: 0,
     };
     
-
     const formik = useFormik({
         initialValues: subCategory ? {
             name: subCategory.name || '',
@@ -69,6 +73,8 @@ const SunCategoryFrom: React.FC<ServiceFormProps> = ({
             fkClientType: subCategory.clientType.pkType !== undefined ? subCategory.clientType.pkType : '',
             fkServiceType: subCategory.serviceType.pkType !== undefined ? subCategory.serviceType.pkType : '',
             status: subCategory.status !== undefined ? subCategory.status : 1,
+            priceFrom: subCategory.priceFrom !== undefined ? subCategory.priceFrom : '',
+            priceTo: subCategory.priceTo !== undefined ? subCategory.priceTo : '',
         } : initialValues,
         validationSchema: validationSchema,
         enableReinitialize: true,
@@ -81,6 +87,8 @@ const SunCategoryFrom: React.FC<ServiceFormProps> = ({
                 fkServiceType: values.fkServiceType ? parseInt(values.fkServiceType.toString(), 10) : null,
                 status: values.status,
                 fkCategory: values.fkCategory ? parseInt(values.fkCategory.toString(), 10) : null,
+                priceFrom: values.priceFrom ? parseFloat(values.priceFrom.toString()) : null,
+                priceTo: values.priceTo ? parseFloat(values.priceTo.toString()) : null,
             };
             onSave(payload);
         },
@@ -189,6 +197,42 @@ const SunCategoryFrom: React.FC<ServiceFormProps> = ({
                             ))}
                         </Select>
                     </FormControl>
+
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', margin: 'dense', marginTop: 2 }}>
+                        <TextField
+                            id="priceFrom"
+                            name="priceFrom"
+                            label="Price From (Optional)"
+                            type="number"
+                            fullWidth
+                            variant="outlined"
+                            value={formik.values.priceFrom === 0 ? '' : formik.values.priceFrom}
+                            onChange={formik.handleChange}
+                            error={formik.touched.priceFrom && Boolean(formik.errors.priceFrom)}
+                            helperText={formik.touched.priceFrom && formik.errors.priceFrom}
+                            disabled={!isEdit}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                            }}
+                        />
+                        <TextField
+                            id="priceTo"
+                            name="priceTo"
+                            label="Price To (Optional)"
+                            type="number"
+                            fullWidth
+                            variant="outlined"
+                            value={formik.values.priceTo === 0 ? '' : formik.values.priceTo}
+                            onChange={formik.handleChange}
+                            error={formik.touched.priceTo && Boolean(formik.errors.priceTo)}
+                            helperText={formik.touched.priceTo && formik.errors.priceTo}
+                            disabled={!isEdit}
+                            InputProps={{
+                                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                            }}
+                        />
+                    </Box>
+
                     <DialogActions>
                         <Button onClick={onClose}>Cancel</Button>
                         {isEdit && (

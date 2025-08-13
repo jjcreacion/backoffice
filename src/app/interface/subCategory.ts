@@ -6,6 +6,8 @@ export interface SubCategory {
   pkSubCategory: number;
   name: string;
   description: string;
+  priceFrom: number | null;
+  priceTo: number | null;
   status: number;
   createdAt: string | null;
   updatedAt: string | null;
