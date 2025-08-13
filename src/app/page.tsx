@@ -1,7 +1,8 @@
-'use client';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from "react";
+'use client'
+import axios from 'axios'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
 
 import {
   Alert,
@@ -16,134 +17,145 @@ import {
   IconButton,
   InputAdornment,
   TextField,
-  Typography
-} from "@mui/material";
-import { FaEnvelope, FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
+  Typography,
+} from '@mui/material'
+import { FaEnvelope, FaEye, FaEyeSlash, FaLock } from 'react-icons/fa'
 
 interface LoginResponse {
-  accessToken: string;
-  pkUser: number;
+  accessToken: string
+  pkUser: number
 }
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const router = useRouter();
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const router = useRouter()
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost';
-  const port = process.env.NEXT_PUBLIC_PORT || '3001';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost'
+  const port = process.env.NEXT_PUBLIC_PORT || '3001'
 
   // Evitar problemas de hidratación
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   const validateForm = () => {
     if (!email.trim()) {
-      setError("Email is required");
-      return false;
+      setError('Email is required')
+      return false
     }
     if (!password.trim()) {
-      setError("Password is required");
-      return false;
+      setError('Password is required')
+      return false
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return false;
+      setError('Password must be at least 6 characters')
+      return false
     }
-    return true;
-  };
+    return true
+  }
 
   const handleLogin = async (event: React.FormEvent) => {
-    event.preventDefault();
-    
-    if (!validateForm()) return;
+    event.preventDefault()
 
-    setLoading(true);
-    setError("");
+    if (!validateForm()) return
+
+    setLoading(true)
+    setError('')
 
     try {
-      const response = await axios.post<LoginResponse>(`${baseUrl}:${port}/user/loginWithEmail`, {
-        email: email,
-        password: password,
-      });
+      const response = await axios.post<LoginResponse>(
+        `${baseUrl}:${port}/user/loginWithEmail`,
+        {
+          email: email,
+          password: password,
+        }
+      )
 
-      const { accessToken, pkUser } = response.data;
+      const { accessToken, pkUser } = response.data
 
       // Configurar axios inmediatamente
-      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
 
       // Guardar datos inmediatamente
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('access_token', accessToken);
-      storage.setItem('pkUser', pkUser.toString());
+      const storage = rememberMe ? localStorage : sessionStorage
+      storage.setItem('access_token', accessToken)
+      storage.setItem('pkUser', pkUser.toString())
 
       // Redirigir inmediatamente
-      router.push('/dashboard');
+      router.push('/dashboard')
 
       // Obtener datos del usuario en background
       try {
-        const userResponse = await axios.get(`${baseUrl}:${port}/user/findOne/${pkUser}`);
-        storage.setItem('user', JSON.stringify(userResponse.data));
+        const userResponse = await axios.get(
+          `${baseUrl}:${port}/user/findOne/${pkUser}`
+        )
+        storage.setItem('user', JSON.stringify(userResponse.data))
       } catch (userError) {
-        console.warn('Failed to fetch user data:', userError);
+        console.warn('Failed to fetch user data:', userError)
       }
-
     } catch (err: any) {
-      console.error('Login error:', err);
-      
+      console.error('Login error:', err)
+
       if (err.response?.status === 401) {
-        setError("Invalid email or password");
+        setError('Invalid email or password')
       } else if (err.response?.status === 403) {
-        setError("Account is disabled or insufficient permissions");
+        setError('Account is disabled or insufficient permissions')
       } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
+        setError(err.response.data.message)
       } else {
-        setError("Login failed. Please try again later.");
+        setError('Login failed. Please try again later.')
       }
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+    setShowPassword(!showPassword)
+  }
 
   // No renderizar hasta que esté montado en el cliente
   if (!mounted) {
-    return null;
+    return null
   }
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #36454F 0%, #B22222 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #36454F 0%, #B22222 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
       }}
     >
       <Container maxWidth="sm">
         <Card
           sx={{
             maxWidth: 450,
-            width: "100%",
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+            width: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
           }}
         >
           <CardContent sx={{ p: 4 }}>
             {/* Header */}
-            <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Box
+              sx={{
+                mb: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
               <Box
                 component="img"
                 src="/images/icon-tnb.png"
@@ -154,21 +166,21 @@ const LoginPage = () => {
                   height: 'auto',
                 }}
               />
-              <Typography 
-                variant="h4" 
-                component="h1" 
-                sx={{ 
-                  color: "#36454F", 
-                  fontWeight: "bold",
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{
+                  color: '#36454F',
+                  fontWeight: 'bold',
                   textAlign: 'center',
                 }}
               >
                 Welcome Back
               </Typography>
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: "text.secondary", 
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
                   mt: 1,
                   textAlign: 'center',
                 }}
@@ -214,7 +226,7 @@ const LoginPage = () => {
                 required
                 name="password"
                 label="Password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 onChange={(e) => setPassword(e.target.value)}
                 id="password"
                 autoComplete="current-password"
@@ -241,28 +253,40 @@ const LoginPage = () => {
                 }}
               />
 
-              <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Box
+                sx={{
+                  mt: 2,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
                 <FormControlLabel
                   control={
-                    <Checkbox 
-                      checked={rememberMe} 
+                    <Checkbox
+                      checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
                       disabled={loading}
                     />
                   }
                   label="Remember me"
                 />
-                <Typography
-                  variant="body2"
-                  sx={{ 
-                    color: "#B22222", 
-                    cursor: loading ? "default" : "pointer", 
-                    "&:hover": { textDecoration: loading ? "none" : "underline" },
-                    userSelect: 'none',
-                  }}
-                >
-                  Forgot Password?
-                </Typography>
+                <Link href="/auth/forgot-password" style={{ textDecoration: 'none' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#B22222',
+                      cursor: loading ? 'default' : 'pointer',
+                      '&:hover': {
+                        textDecoration: loading ? 'none' : 'underline',
+                      },
+                      userSelect: 'none',
+                      pointerEvents: loading ? 'none' : 'auto',
+                    }}
+                  >
+                    Forgot Password?
+                  </Typography>
+                </Link>
               </Box>
 
               <Button
@@ -270,30 +294,36 @@ const LoginPage = () => {
                 fullWidth
                 variant="contained"
                 disabled={loading}
-                startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+                startIcon={
+                  loading ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : null
+                }
                 sx={{
                   mt: 3,
                   mb: 2,
-                  background: "linear-gradient(45deg, #B22222 30%, #36454F 90%)",
-                  color: "white",
-                  padding: "12px",
-                  "&:hover": {
-                    background: "linear-gradient(45deg, #36454F 30%, #B22222 90%)",
+                  background:
+                    'linear-gradient(45deg, #B22222 30%, #36454F 90%)',
+                  color: 'white',
+                  padding: '12px',
+                  '&:hover': {
+                    background:
+                      'linear-gradient(45deg, #36454F 30%, #B22222 90%)',
                   },
-                  "&:disabled": {
-                    background: "rgba(0, 0, 0, 0.12)",
-                    color: "rgba(0, 0, 0, 0.26)",
+                  '&:disabled': {
+                    background: 'rgba(0, 0, 0, 0.12)',
+                    color: 'rgba(0, 0, 0, 0.26)',
                   },
                 }}
               >
-                {loading ? "Signing In..." : "Sign In"}
+                {loading ? 'Signing In...' : 'Sign In'}
               </Button>
             </Box>
           </CardContent>
         </Card>
       </Container>
     </Box>
-  );
-};
+  )
+}
 
-export default LoginPage;
+export default LoginPage
