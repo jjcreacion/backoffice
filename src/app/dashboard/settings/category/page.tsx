@@ -144,21 +144,24 @@ const CategoryPage: React.FC = () => {
       }
 
       const savedCategory = await response.json();
-      console.log(savedCategory);
+      console.log(JSON.stringify(savedCategory));
+
       let finalCategory = savedCategory;
 
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
 
-        const uploadResponse = await fetch(`${UPLOAD_IMAGE_ENDPOINT}/${savedCategory.category.pkCategory}`, {
+        const uploadResponse = await fetch(`${UPLOAD_IMAGE_ENDPOINT}/${savedCategory.pkCategory}`, {
           method: "POST",
           body: formData,
         });
 
+       console.log(JSON.stringify(" PK category =" + savedCategory.pkCategory));
+
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
-          console.error(`Error al subir la imagen para la categoría ${savedCategory.category.pkCategory}:`, errorText);
+          console.error(`Error al subir la imagen para la categoría ${savedCategory.pkCategory}:`, errorText);
           showSnackbar(`Categoría guardada, pero la subida de imagen falló: ${errorText}`, 'warning');
         } else {
           const uploadedImageData = await uploadResponse.json();
