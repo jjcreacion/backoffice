@@ -144,7 +144,6 @@ const CategoryPage: React.FC = () => {
       }
 
       const savedCategory = await response.json();
-      console.log(JSON.stringify(savedCategory));
 
       let finalCategory = savedCategory;
 
@@ -156,8 +155,6 @@ const CategoryPage: React.FC = () => {
           method: "POST",
           body: formData,
         });
-
-       console.log(JSON.stringify(" PK category =" + savedCategory.pkCategory));
 
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
