@@ -171,7 +171,7 @@ const CategoryPage: React.FC = () => {
         setCategories([...categories, finalCategory]);
         showSnackbar('Category created successfully', 'success');
       } else {
-        setCategories(categories.map((p) => (p.pkCategory === finalCategory.pkCategory ? finalCategory.category : p)));
+        setCategories(categories.map((p) => (p.pkCategory === finalCategory.pkCategory ? finalCategory : p)));
         showSnackbar('Category successfully updated', 'success');
       }
 
