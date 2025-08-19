@@ -1,25 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
 import {
+    Alert,
     Box,
+    Button,
+    CircularProgress,
+    Snackbar,
     TextField,
     Typography,
-    Button,
-    Snackbar,
-    Alert,
-    CircularProgress,
 } from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
-import { SubCategoryTable, SubCategoryForm, ServiceAddOn } from '../../components/settings/sub-category';
-import { SubCategory } from "../../../interface/subCategory";
 import { Category } from "../../../interface/category";
 import { ClientType } from "../../../interface/clientType";
 import { ServiceType } from "../../../interface/serviceType";
+import { SubCategory } from "../../../interface/subCategory";
+import { ServiceAddOn, SubCategoryForm, SubCategoryTable } from '../../components/settings/sub-category';
 
 import { ChangeEvent, MouseEvent } from 'react';
-import PageContent from '../../components/dashboard/pageContent';
 import GlassCard from '../../components/dashboard/glassCard';
+import PageContent from '../../components/dashboard/pageContent';
 
 interface SelectOptions {
     categories: Category[];

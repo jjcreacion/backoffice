@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, styled, useTheme, Grid, Snackbar, Alert } from '@mui/material';
-import PageContent from './components/dashboard/pageContent';
-import GlassCard from './components/dashboard/glassCard';
-import RealtimeCampaignInterests from './components/app-mobile/campaigns/RealtimeCampaignInterests'; 
 import CampaignIcon from '@mui/icons-material/Campaign';
+import { Alert, CardContent, Grid, Snackbar, Typography, useTheme } from '@mui/material';
+import React, { useState } from 'react';
+import RealtimeCampaignInterests from './components/app-mobile/campaigns/RealtimeCampaignInterests';
+import GlassCard from './components/dashboard/glassCard';
+import PageContent from './components/dashboard/pageContent';
 
 export default function DashboardCentralView() {
   const theme = useTheme();
