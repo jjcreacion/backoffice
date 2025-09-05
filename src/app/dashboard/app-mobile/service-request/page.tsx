@@ -24,6 +24,7 @@ const RequestServicePage: React.FC = () => {
     const [open, setOpen] = useState(false);
     const [isEdit, setIsedit] = useState(true);
     const [requestService, setRequestService] = useState<RequestService | null>(null);
+    const [statusNames, setStatusNames] = useState<Map<number, string>>(new Map());
     const [searchQuery, setSearchQuery] = useState('');
     const [orderBy, setOrderBy] = useState('createdAt');
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
@@ -140,8 +141,6 @@ const RequestServicePage: React.FC = () => {
                 <Typography color="error">{error}</Typography>
             ) : (
                 <>
-                {console.log("filteredRequest en render:", filteredRequest)}
-
                 <RequestTable
                 requests={filteredRequest}
                 onEdit={handleEdit}

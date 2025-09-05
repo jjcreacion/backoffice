@@ -22,6 +22,7 @@ import { FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 import { RequestService } from '@interfaces/serviceRequest';
 import { ChangeEvent, MouseEvent } from 'react';
 import Link from 'next/link';
+import HistoryModal from './HistoryModal'; 
 
 interface RequestServiceTableProps {
   requests: RequestService[];
@@ -40,37 +41,6 @@ interface RequestServiceTableProps {
   searchQuery: string;
 }
 
-interface StatusInfo {
-  label: string;
-  color: 'warning' | 'primary' | 'success' | 'error';
-}
-
-interface ServiceInfo {
-  label: string;
-}
-
-const statusMap: { [key: number]: StatusInfo } = {
-  0: { label: 'Pending', color: 'warning' },
-  1: { label: 'In Progress', color: 'primary' },
-  2: { label: 'Completed', color: 'success' },
-  3: { label: 'Cancelled', color: 'error' },
-};
-
-//CORREGIDO: Agregada la anotación de tipo completa
-const SERVICES: { [key: number]: ServiceInfo } = {
-  1: { label: 'Insurance Claim' },
-  2: { label: 'Roofing' },
-  3: { label: 'HVAC' },
-  4: { label: 'Gutters' },
-  5: { label: 'Windows' },
-  6: { label: 'Insolation' },
-  7: { label: 'Solar Panel' },
-  8: { label: 'Electric Service' },
-  9: { label: 'Water Threatment' },
-  10: { label: 'Tax Services' },
-  11: { label: 'Other' },
-};
-
 const RequestTable: React.FC<RequestServiceTableProps> = ({
   requests,
   onView,
@@ -86,6 +56,30 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
 }) => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   const port = process.env.NEXT_PUBLIC_PORT;
+  const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+  const [statuses, setStatuses] = useState<{ statusId: number; name: string }[]>([]);
+  
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const response = await fetch(`${baseUrl}:${port}/status-list`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch statuses');
+        }
+        const data = await response.json();
+        setStatuses(data);
+      } catch (error) {
+        console.error('Error fetching statuses:', error);
+      }
+    };
+    fetchStatuses();
+  }, []);
+
+  const getStatusName = (statusId: number | null): string => {
+    const status = statuses.find(s => s.statusId === statusId);
+    return status ? status.name : 'Submitted';
+  };
 
   const filteredRequestService = requests.filter((requestService) => {
     const lowerCaseSearch = searchQuery.toLowerCase();
@@ -94,8 +88,6 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
       ?.includes(lowerCaseSearch);
   });
   
-  console.log('requests prop recibida en RequestTable:', requests);
-
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewRequestService, setViewRequestService] =
     useState<RequestService | null>(null);
@@ -116,11 +108,6 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
     setConfirmDeleteOpen(true);
   };
 
-  // CORREGIDO: Función que no se usaba pero estaba mal tipada
-  const getServiceLabel = (serviceType: number): string => {
-    return SERVICES[serviceType]?.label || 'Unknown Service';
-  };
-
   const paginatedRequestService = sortedRequestService.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -129,6 +116,16 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
   const handleCloseDeleteConfirmation = () => {
     setConfirmDeleteOpen(false);
     setRequestServiceToDelete(null);
+  };
+
+  const handleOpenHistoryModal = (requestId: number) => {
+    setSelectedRequestId(requestId);
+    setHistoryModalOpen(true);
+  };
+
+  const handleCloseHistoryModal = () => {
+    setHistoryModalOpen(false);
+    setSelectedRequestId(null);
   };
 
   return (
@@ -159,8 +156,7 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
           {paginatedRequestService.map((requestService) => (
             <TableRow key={requestService.requestId}>
               <TableCell>
-                {/* CORREGIDO: Agregada verificación de existencia */}
-                {SERVICES[requestService.serviceType]?.label || 'Unknown Service'}
+                {requestService.fkCategory?.name}
               </TableCell>
 
               <TableCell>
@@ -173,22 +169,20 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
                     clickable
                     size="small"
                     color="primary"
-                    variant="outlined"
                     sx={{ borderRadius: '5px' }}
                   />
                 </Link>
               </TableCell>
               <TableCell>{requestService.address}</TableCell>
               <TableCell>
-                {statusMap[requestService.status] ? (
-                  <Chip
-                    label={statusMap[requestService.status].label}
-                    color={statusMap[requestService.status].color}
+                <Chip
+                    label={getStatusName(requestService.fkRequestStatus)}
+                    clickable
                     size="small"
+                    color="secondary"
+                    sx={{ borderRadius: '5px' }}
+                    onClick={() => handleOpenHistoryModal(requestService.requestId)}
                   />
-                ) : (
-                  `Estado Desconocido (${requestService.status})`
-                )}
               </TableCell>
               <TableCell>
                 {requestService.createdAt 
@@ -217,7 +211,14 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
         onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}
       />
+       <HistoryModal
+        open={historyModalOpen}
+        onClose={handleCloseHistoryModal}
+        requestId={selectedRequestId}
+      />
     </TableContainer>
+
+    
   );
 };
 
