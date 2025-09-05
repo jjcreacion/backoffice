@@ -58,6 +58,8 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
   const port = process.env.NEXT_PUBLIC_PORT;
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
+  const [currentStatusId, setCurrentStatusId] = useState<number | null>(null);
+  const [currentStatusName, setCurrentStatusName] = useState<string>('');
   const [statuses, setStatuses] = useState<{ statusId: number; name: string }[]>([]);
   
   useEffect(() => {
@@ -74,7 +76,7 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
       }
     };
     fetchStatuses();
-  }, []);
+  }, [baseUrl, port]);
 
   const getStatusName = (statusId: number | null): string => {
     const status = statuses.find(s => s.statusId === statusId);
@@ -118,14 +120,19 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
     setRequestServiceToDelete(null);
   };
 
-  const handleOpenHistoryModal = (requestId: number) => {
-    setSelectedRequestId(requestId);
+  // Se modificó esta función
+  const handleOpenHistoryModal = (requestService: RequestService) => {
+    setSelectedRequestId(requestService.requestId);
+    setCurrentStatusId(requestService.fkRequestStatus);
+    setCurrentStatusName(getStatusName(requestService.fkRequestStatus));
     setHistoryModalOpen(true);
   };
 
   const handleCloseHistoryModal = () => {
     setHistoryModalOpen(false);
     setSelectedRequestId(null);
+    setCurrentStatusId(null);
+    setCurrentStatusName('');
   };
 
   return (
@@ -133,7 +140,7 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
       <Table>
         <TableHead>
           <TableRow>
-            {['Request Type', 'User', 'Address', 'Status', 'Date', 'Info.'].map(
+            {['requestId','Request Type', 'User', 'Address', 'Status', 'Date', 'Info.'].map(
               (header) => (
                 <TableCell key={header}>
                   {header === 'Actions' ? (
@@ -155,10 +162,10 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
         <TableBody>
           {paginatedRequestService.map((requestService) => (
             <TableRow key={requestService.requestId}>
+              <TableCell>{requestService.requestId}</TableCell>
               <TableCell>
                 {requestService.fkCategory?.name}
               </TableCell>
-
               <TableCell>
                 <Link
                   href={`${baseUrl}:${port}/dashboard/contact_detail/`}
@@ -181,7 +188,7 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
                     size="small"
                     color="secondary"
                     sx={{ borderRadius: '5px' }}
-                    onClick={() => handleOpenHistoryModal(requestService.requestId)}
+                    onClick={() => handleOpenHistoryModal(requestService)}
                   />
               </TableCell>
               <TableCell>
@@ -215,6 +222,8 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
         open={historyModalOpen}
         onClose={handleCloseHistoryModal}
         requestId={selectedRequestId}
+        currentStatusId={currentStatusId}
+        currentStatusName={currentStatusName}
       />
     </TableContainer>
 
