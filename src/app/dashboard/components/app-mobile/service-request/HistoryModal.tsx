@@ -48,7 +48,7 @@ interface HistoryModalProps {
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 const port = process.env.NEXT_PUBLIC_PORT;
-const userId = 1; 
+const userId = 21;
 
 const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, currentStatusId }) => {
   const [requestHistory, setRequestHistory] = useState<HistoryEntry[]>([]);
@@ -106,7 +106,8 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, c
       setError('Please select a new status.');
       return;
     }
-
+    console.log(userId);
+    console.log(localStorage.getItem('pkUser'));
     setLoadingChange(true);
     setError(null);
     setSuccessMessage(null);
