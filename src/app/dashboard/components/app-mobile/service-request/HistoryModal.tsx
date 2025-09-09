@@ -36,6 +36,7 @@ interface HistoryEntry {
 interface Status {
   statusId: number;
   name: string;
+  order: number;
 }
 
 interface HistoryModalProps {
@@ -48,7 +49,7 @@ interface HistoryModalProps {
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 const port = process.env.NEXT_PUBLIC_PORT;
-const userId = 1; 
+const userId = localStorage.getItem('pkUser') || sessionStorage.getItem('pkUser'); 
 
 const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, currentStatusId }) => {
   const [requestHistory, setRequestHistory] = useState<HistoryEntry[]>([]);
@@ -77,6 +78,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, c
       setLoadingHistory(false);
     }
   };
+  
 
   const fetchStatuses = async () => {
     try {
@@ -85,12 +87,14 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, c
         throw new Error('Error fetching status list');
       }
       const data: Status[] = await response.json();
+      console.log("Data="+JSON.stringify(data));
       setStatuses(data);
     } catch (err) {
       console.error('Error fetching statuses:', err);
       setError('Could not load status options.');
     }
   };
+  console.log(statuses);
 
   useEffect(() => {
     if (open && requestId) {
@@ -173,13 +177,13 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, c
                   onChange={(e) => setNewStatusId(e.target.value as number)}
                 >
                   <MenuItem value="" disabled>
-                    *Select a new status*
+                    Select a new status
                   </MenuItem>
                   {statuses
                     .filter(status => status.statusId !== currentStatusId)
                     .map((status) => (
                       <MenuItem key={status.statusId} value={status.statusId}>
-                        {status.name}
+                        {status.order}
                       </MenuItem>
                     ))}
                 </Select>

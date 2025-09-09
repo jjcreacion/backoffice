@@ -85,7 +85,7 @@ const LoginPage = () => {
       // Guardar token, pkUser y roles en el almacenamiento correspondiente
       const storage = rememberMe ? localStorage : sessionStorage
       storage.setItem('access_token', accessToken)
-      storage.setItem('pkUser', pkUser.toString())
+     // storage.setItem('pkUser', pkUser.toString())
       storage.setItem('user_roles', JSON.stringify(roles))
 
       // Obtener datos del usuario en segundo plano
@@ -93,6 +93,7 @@ const LoginPage = () => {
         .get(`${baseUrl}:${port}/user/findOne/${pkUser}`)
         .then((userResponse) => {
           storage.setItem('user', JSON.stringify(userResponse.data))
+          storage.setItem('pkUser', pkUser.toString())
         })
         .catch((userError) => {
           console.warn('Failed to fetch user data:', userError)
