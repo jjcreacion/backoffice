@@ -115,18 +115,16 @@ const RequestTable: React.FC<RequestServiceTableProps> = ({
     page * rowsPerPage + rowsPerPage
   );
 
-  const handleCloseDeleteConfirmation = () => {
-    setConfirmDeleteOpen(false);
-    setRequestServiceToDelete(null);
-  };
-
-  // Se modificó esta función
   const handleOpenHistoryModal = (requestService: RequestService) => {
+    const statusId = requestService.fkRequestStatus ?? 1;
+    const statusName = getStatusName(statusId);
+
     setSelectedRequestId(requestService.requestId);
-    setCurrentStatusId(requestService.fkRequestStatus);
-    setCurrentStatusName(getStatusName(requestService.fkRequestStatus));
+    setCurrentStatusId(statusId);
+    setCurrentStatusName(statusName);
+
     setHistoryModalOpen(true);
-  };
+};
 
   const handleCloseHistoryModal = () => {
     setHistoryModalOpen(false);

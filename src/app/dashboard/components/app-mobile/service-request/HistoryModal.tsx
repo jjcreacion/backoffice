@@ -35,8 +35,8 @@ interface HistoryEntry {
 
 interface Status {
   statusId: number;
-  name: string;
   order: number;
+  name: string;
 }
 
 interface HistoryModalProps {
@@ -87,14 +87,12 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, c
         throw new Error('Error fetching status list');
       }
       const data: Status[] = await response.json();
-      console.log("Data="+JSON.stringify(data));
       setStatuses(data);
     } catch (err) {
       console.error('Error fetching statuses:', err);
       setError('Could not load status options.');
     }
   };
-  console.log(statuses);
 
   useEffect(() => {
     if (open && requestId) {
@@ -183,7 +181,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, requestId, c
                     .filter(status => status.statusId !== currentStatusId)
                     .map((status) => (
                       <MenuItem key={status.statusId} value={status.statusId}>
-                        {status.order}
+                        {status.order}. {status.name}
                       </MenuItem>
                     ))}
                 </Select>
