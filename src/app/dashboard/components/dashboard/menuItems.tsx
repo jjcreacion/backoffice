@@ -8,6 +8,7 @@ import ClassIcon from '@mui/icons-material/Class';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import AppSettingsAltIcon from '@mui/icons-material/AppSettingsAlt';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 
 const iconSmall = 18;
 const iconSmallSubItems = 16; 
@@ -30,6 +31,11 @@ const menuItems = [
       label: 'LEADS',
       icon: <DashboardIcon style={{ fontSize: iconSmall }} />,
       href: '/dashboard/contact_list',
+    },
+    {
+      label: 'BILLING',
+      icon: <PointOfSaleIcon style={{ fontSize: iconSmall }} />,
+      href: '/dashboard/billing/invoices',
     },
     {
       label: 'SETTINGS',
