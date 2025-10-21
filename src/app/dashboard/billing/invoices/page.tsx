@@ -12,11 +12,17 @@ import {
 } from '@mui/material';
 import { FaSearch } from 'react-icons/fa';
 import  InvoiceTable  from '../../components/billing/invoices/InvoiceTable'; 
+import InvoiceForm from '../../components/billing/invoices/InvoiceForm';
 import { ChangeEvent, MouseEvent } from 'react';
 import PageContent from '../../components/dashboard/pageContent';
 import GlassCard from '../../components/dashboard/glassCard';
 import { InvoiceInterface } from "@interfaces/Invoice"; 
 import axios from 'axios'; 
+
+type InvoiceFormData = Omit<
+    InvoiceInterface,
+    'id' | 'created_at' | 'updated_at' | 'user' | 'invoice_id' | 'payment_date' | 'status'
+>;
 
 const InvoicePage: React.FC = () => {
     const [invoices, setInvoices] = useState<InvoiceInterface[]>([]); 
@@ -24,6 +30,7 @@ const InvoicePage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [open, setOpen] = useState(false);
     const [isEdit, setIsedit] = useState(true);
+    const [savingData, setSavingData] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<InvoiceInterface | null>(null); 
     const [searchQuery, setSearchQuery] = useState('');
     const [orderBy, setOrderBy] = useState('createdAt');
@@ -83,6 +90,26 @@ const InvoicePage: React.FC = () => {
 
     const handleChangePage = (event: MouseEvent<HTMLButtonElement> | null, newPage: number) => {
         setPage(newPage);
+    };
+
+    const handleSave = async (invoiceData: InvoiceFormData) => {
+        setSavingData(true);
+        try {
+            if (selectedInvoice) {
+                await axios.patch(`${baseUrl}:${port}/invoices/${selectedInvoice.invoice_id}`, invoiceData);
+                showSnackbar('Factura actualizada exitosamente.', 'success');
+            } else {
+                await axios.post(`${baseUrl}:${port}/invoices`, invoiceData);
+                showSnackbar('Factura creada exitosamente.', 'success');
+            }
+            await fetchData();
+            setOpen(false);
+        } catch (err: any) {
+            console.error('Error al guardar la factura:', err);
+            showSnackbar(`Error al guardar la factura: ${err.response?.data?.message || err.message}`, 'error');
+        } finally {
+            setSavingData(false);
+        }
     };
 
     const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
@@ -164,7 +191,7 @@ const InvoicePage: React.FC = () => {
                 open={open}
                 isEdit={isEdit}
                 onClose={() => setOpen(false)}
-                category={category}
+                invoice={selectedInvoice}
                 onSave={handleSave}
             />
 
