@@ -15,6 +15,7 @@ import  InvoiceTable  from '../../components/billing/invoices/InvoiceTable';
 import InvoiceForm from '../../components/billing/invoices/InvoiceForm';
 import { ChangeEvent, MouseEvent } from 'react';
 import PageContent from '../../components/dashboard/pageContent';
+import ChangeInvoiceStatusModal from '../../components/billing/invoices/ChangeInvoiceStatusModal';
 import GlassCard from '../../components/dashboard/glassCard';
 import { InvoiceInterface } from "@interfaces/Invoice"; 
 import axios from 'axios'; 
@@ -23,6 +24,12 @@ type InvoiceFormData = Omit<
     InvoiceInterface,
     'id' | 'created_at' | 'updated_at' | 'user' | 'invoice_id' | 'payment_date' | 'status'
 >;
+
+interface InvoiceStatusInfo {
+    invoiceId: number;
+    currentStatus: string;
+    invoiceNum: string,
+}
 
 const InvoicePage: React.FC = () => {
     const [invoices, setInvoices] = useState<InvoiceInterface[]>([]); 
@@ -40,6 +47,8 @@ const InvoicePage: React.FC = () => {
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+    const [statusModalOpen, setStatusModalOpen] = useState(false);
+    const [invoiceToChangeStatus, setInvoiceToChangeStatus] = useState<InvoiceStatusInfo | null>(null);
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     const port = process.env.NEXT_PUBLIC_PORT;
@@ -67,6 +76,32 @@ const InvoicePage: React.FC = () => {
         setSelectedInvoice(invoice);
         setIsedit(true);
         setOpen(true);
+    };
+
+    const handleChangeStatus = (invoice: InvoiceInterface) => {
+        if (invoice.invoice_id && invoice.invoice_status) { 
+            setInvoiceToChangeStatus({
+                invoiceId: invoice.invoice_id,
+                currentStatus: invoice.invoice_status, 
+                invoiceNum: invoice.invoice_number,
+            });
+            setStatusModalOpen(true);
+        } else {
+            showSnackbar('Cannot change status: Invoice ID or current status is missing.', 'error');
+            console.error('Missing data for status change:', { 
+                id: invoice.invoice_id, 
+                status: invoice.invoice_status 
+            });
+        }
+    };
+
+    const handleCloseStatusModal = (statusChanged: boolean) => {
+        setStatusModalOpen(false);
+        setInvoiceToChangeStatus(null);
+    };
+
+    const handleStatusChangeSuccess = () => {
+        fetchData();
     };
 
     const handleCreate = () => {
@@ -97,10 +132,10 @@ const InvoicePage: React.FC = () => {
         try {
             if (selectedInvoice) {
                 await axios.patch(`${baseUrl}:${port}/invoices/${selectedInvoice.invoice_id}`, invoiceData);
-                showSnackbar('Factura actualizada exitosamente.', 'success');
+                showSnackbar('Invoice updated successfully.', 'success');
             } else {
                 await axios.post(`${baseUrl}:${port}/invoices`, invoiceData);
-                showSnackbar('Factura creada exitosamente.', 'success');
+                showSnackbar('Invoice created successfully.', 'success');
             }
             await fetchData();
             setOpen(false);
@@ -177,6 +212,7 @@ const InvoicePage: React.FC = () => {
                     orderBy={orderBy}
                     order={order}
                     handleSort={handleSort}
+                    onChangeStatus={handleChangeStatus}
                     page={page}
                     rowsPerPage={rowsPerPage}
                     handleChangePage={handleChangePage}
@@ -194,7 +230,13 @@ const InvoicePage: React.FC = () => {
                 invoice={selectedInvoice}
                 onSave={handleSave}
             />
-
+            
+            <ChangeInvoiceStatusModal
+                open={statusModalOpen}
+                onClose={handleCloseStatusModal}
+                invoiceInfo={invoiceToChangeStatus}
+                onStatusChangeSuccess={handleStatusChangeSuccess}
+            />
                 <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
                 <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: 'auto', minWidth: 300, fontSize: '1.2rem', padding: '1rem' }}>
                     {snackbarMessage}

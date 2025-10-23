@@ -11,17 +11,19 @@ import {
   TablePagination,
   TableSortLabel,
   IconButton,
-  Chip,
+  Chip, // Mantendremos el Chip
+  Button, // Eliminado ya que el Chip manejará la acción
 } from '@mui/material';
-import { FaEye, FaExternalLinkAlt } from 'react-icons/fa'; 
+import { FaEye, FaExternalLinkAlt } from 'react-icons/fa'; // Se eliminó FaPencilAlt y FaCheckCircle
 import { InvoiceInterface } from '@interfaces/Invoice'; 
 import { ChangeEvent, MouseEvent } from 'react';
 import Link from 'next/link';
 
 interface InvoiceTableProps {
   invoices: InvoiceInterface[]; 
-  onEdit: (invoice: InvoiceInterface) => void;
+  onEdit: (invoice: InvoiceInterface) => void; // A pesar de que no se usará el botón, se mantiene en la interfaz de la página
   onView: (invoice: InvoiceInterface) => void;
+  onChangeStatus: (invoice: InvoiceInterface) => void; // Función para abrir la modal de cambio de estado
   orderBy: string;
   order: 'asc' | 'desc';
   handleSort: (property: string) => void;
@@ -37,7 +39,9 @@ interface InvoiceTableProps {
 
 const InvoiceTable: React.FC<InvoiceTableProps> = ({ 
   invoices,
+  // onEdit se quita de las props desestructuradas ya que no se usará
   onView,
+  onChangeStatus, // Se usa en la columna Status
   orderBy,
   order,
   handleSort,
@@ -71,42 +75,49 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   });
   
   const sortedInvoices = [...filteredInvoices].sort((a, b) => {
-    const isAsc = orderBy === 'invoice_number' && order === 'asc';
-    return isAsc
-      ? a.invoice_number.localeCompare(b.invoice_number)
-      : b.invoice_number.localeCompare(a.invoice_number);
+    let comparison = 0;
+    if (orderBy === 'invoice_number') {
+        comparison = a.invoice_number.localeCompare(b.invoice_number);
+    } 
+    // Agrega aquí otras condiciones de ordenamiento si es necesario
+    
+    return order === 'asc' ? comparison : -comparison;
   });
+
 
   const paginatedInvoices = sortedInvoices.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
 
+  const headCells = [
+    { id: 'invoice_number', label: 'Invoice No.' },
+    { id: 'customer', label: 'Customer' },
+    { id: 'invoice_amount', label: 'Amount' },
+    { id: 'invoice_status', label: 'Status' }, // Aquí va la acción de cambio de estado
+    { id: 'invoice_date', label: 'Issue Date' },
+    { id: 'payment_date', label: 'Payment Date' },
+    { id: 'actions', label: 'Actions' }, // Solo para ver y link público
+  ];
+
+
   return (
     <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
-            {[
-              'Invoice No.',
-              'Customer',
-              'Amount',
-              'Status',
-              'Issue Date',
-              'Payment Date',
-              'Actions',
-            ].map(
-              (header) => (
-                <TableCell key={header}>
-                  {header === 'Acciones' ? (
-                    'Acciones'
+            {headCells.map(
+              (headCell) => (
+                <TableCell key={headCell.id}>
+                  {headCell.id === 'actions' || headCell.id === 'customer' ? (
+                    headCell.label
                   ) : (
                     <TableSortLabel
-                      active={orderBy === header.toLowerCase().replace(/[\.º]/g, '').replace(/\s+/g, '_')}
+                      active={orderBy === headCell.id}
                       direction={order}
-                      onClick={() => handleSort(header.toLowerCase().replace(/[\.º]/g, '').replace(/\s+/g, '_'))}
+                      onClick={() => handleSort(headCell.id)}
                     >
-                      {header}
+                      {headCell.label}
                     </TableSortLabel>
                   )}
                 </TableCell>
@@ -122,6 +133,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
                 <Link
                   href={`${baseUrl}:${port}/dashboard/contact_detail/${invoice.fk_user}`}
                   passHref
+                  legacyBehavior
                 >
                   <Chip
                     label={invoice.user?.email || 'N/A'}
@@ -133,6 +145,8 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
                 </Link>
               </TableCell>
               <TableCell>${invoice.invoice_amount.toFixed(2)}</TableCell>
+              
+              {/* === COLUMNA STATUS (Con funcionalidad de cambio) === */}
               <TableCell>
                 <Chip
                     label={invoice.invoice_status}
@@ -140,37 +154,50 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
                     size="small"
                     color={getStatusColor(invoice.invoice_status)}
                     sx={{ borderRadius: '5px' }}
-                  />
+                    onClick={() => onChangeStatus(invoice)} // AÑADIDO: Llama a la función de cambio de estado
+                    title="Click to change status"
+                />
               </TableCell>
+              {/* =================================================== */}
+
               <TableCell>
                 {new Date(invoice.invoice_date).toLocaleDateString()}
               </TableCell>
               <TableCell>
                 {invoice.payment_date 
                   ? new Date(invoice.payment_date).toLocaleDateString()
-                  : 'Pendiente'
+                  : 'Pending'
                 }
               </TableCell>
-              <TableCell>
+              
+              {/* === COLUMNA ACTIONS (Solo ver y link público) === */}
+              <TableCell sx={{ minWidth: '100px' }}>
+                {/* 1. Botón de Ver Detalles */}
                 <IconButton
                   color="primary"
                   onClick={() => onView(invoice)}
-                  title="Ver detalles"
+                  title="View details"
+                  size="small"
                 >
                   <FaEye />
                 </IconButton>
+
+                {/* 2. Botón de Link Público */}
                 <Link href={invoice.public_link} passHref legacyBehavior>
                     <IconButton
                         color="secondary"
                         component="a"
                         target="_blank"
                         rel="noopener noreferrer"
-                        title="Ver link público"
+                        title="View public link"
+                        size="small"
                     >
                         <FaExternalLinkAlt />
                     </IconButton>
                 </Link>
+                {/* Botón de Editar y de Cambio de Estado ELIMINADOS de aquí */}
               </TableCell>
+              {/* =================================================== */}
             </TableRow>
           ))}
         </TableBody>
