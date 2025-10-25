@@ -101,7 +101,8 @@ const InvoicePage: React.FC = () => {
     };
 
     const handleStatusChangeSuccess = () => {
-        fetchData();
+        showSnackbar('Invoice status updated successfully.', 'success');
+        fetchData(); 
     };
 
     const handleCreate = () => {
@@ -132,13 +133,13 @@ const InvoicePage: React.FC = () => {
         try {
             if (selectedInvoice) {
                 await axios.patch(`${baseUrl}:${port}/invoices/${selectedInvoice.invoice_id}`, invoiceData);
-                showSnackbar('Invoice updated successfully.', 'success');
+                showSnackbar('Invoice updated successfully.', 'success'); 
             } else {
                 await axios.post(`${baseUrl}:${port}/invoices`, invoiceData);
-                showSnackbar('Invoice created successfully.', 'success');
+                showSnackbar('Invoice created successfully.', 'success'); 
             }
-            await fetchData();
-            setOpen(false);
+            await fetchData(); 
+            setOpen(false); 
         } catch (err: any) {
             console.error('Error al guardar la factura:', err);
             showSnackbar(`Error al guardar la factura: ${err.response?.data?.message || err.message}`, 'error');
@@ -233,9 +234,9 @@ const InvoicePage: React.FC = () => {
             
             <ChangeInvoiceStatusModal
                 open={statusModalOpen}
-                onClose={handleCloseStatusModal}
+                onClose={handleCloseStatusModal} 
                 invoiceInfo={invoiceToChangeStatus}
-                onStatusChangeSuccess={handleStatusChangeSuccess}
+                onStatusChangeSuccess={handleStatusChangeSuccess} 
             />
                 <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
                 <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: 'auto', minWidth: 300, fontSize: '1.2rem', padding: '1rem' }}>

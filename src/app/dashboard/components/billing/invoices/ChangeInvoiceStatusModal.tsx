@@ -16,7 +16,6 @@ import {
   FormControl,
   Alert,
 } from '@mui/material';
-import { FaCheckCircle } from 'react-icons/fa';
 
 interface InvoiceStatusInfo {
   invoiceId: number;
@@ -50,20 +49,18 @@ const ChangeInvoiceStatusModal: React.FC<ChangeInvoiceStatusModalProps> = ({
     open, 
     onClose, 
     invoiceInfo,
-    onStatusChangeSuccess,
+    onStatusChangeSuccess, 
 }) => {
   const [newStatus, setNewStatus] = useState<string>('');
   const [observation, setObservation] = useState<string>('');
   const [loadingChange, setLoadingChange] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
+ 
   useEffect(() => {
     if (open) {
       setNewStatus('');
       setObservation('');
       setError(null);
-      setSuccessMessage(null);
     }
   }, [open]);
 
@@ -83,7 +80,6 @@ const ChangeInvoiceStatusModal: React.FC<ChangeInvoiceStatusModalProps> = ({
 
     setLoadingChange(true);
     setError(null);
-    setSuccessMessage(null);
     
     const payload = {
         status: newStatus,
@@ -106,9 +102,9 @@ const ChangeInvoiceStatusModal: React.FC<ChangeInvoiceStatusModalProps> = ({
         throw new Error(errorData.message || 'Failed to update invoice status.');
       }
 
-      setSuccessMessage(`Status successfully updated to: ${newStatus}!`);
-      setObservation('');
-      onStatusChangeSuccess();
+      onStatusChangeSuccess(); 
+      
+      onClose(true); 
 
     } catch (err: any) {
       console.error('Error updating invoice status:', err);
@@ -118,8 +114,8 @@ const ChangeInvoiceStatusModal: React.FC<ChangeInvoiceStatusModalProps> = ({
     }
   };
 
-  const handleCloseInternal = (statusChanged: boolean) => {
-    onClose(statusChanged);
+  const handleCloseInternal = () => {
+    onClose(false); 
   }
 
   const filterStatuses = availableStatuses.filter(
@@ -127,7 +123,7 @@ const ChangeInvoiceStatusModal: React.FC<ChangeInvoiceStatusModalProps> = ({
   );
 
   return (
-    <Dialog open={open} onClose={() => handleCloseInternal(successMessage !== null)} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleCloseInternal} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         Change Status for Invoice #{invoiceInfo?.invoiceNum}
       </DialogTitle>
@@ -143,9 +139,7 @@ const ChangeInvoiceStatusModal: React.FC<ChangeInvoiceStatusModalProps> = ({
           
           {error && !loadingChange && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           
-          {successMessage && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
-          
-          {!loadingChange && !successMessage && (
+          {!loadingChange && ( 
             <>
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel id="new-status-label">New Status</InputLabel>
@@ -183,14 +177,14 @@ const ChangeInvoiceStatusModal: React.FC<ChangeInvoiceStatusModalProps> = ({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => handleCloseInternal(successMessage !== null)} color="inherit" variant="outlined">
+        <Button onClick={handleCloseInternal} color="inherit" variant="outlined">
             Close
         </Button>
         <Button 
           onClick={handleSave} 
           color="primary" 
           variant="contained" 
-          disabled={loadingChange || newStatus === '' || successMessage !== null}
+          disabled={loadingChange || newStatus === ''} 
         >
           {loadingChange ? <CircularProgress size={24} color="inherit" /> : 'Confirm Status Change'}
         </Button>
