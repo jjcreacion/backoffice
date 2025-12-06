@@ -4,7 +4,7 @@ module.exports = {
     script: 'npm',
     args: 'start', 
     exec_mode: 'cluster',
-    instances: max, 
+    instances: 'max', 
     out_file: '/var/www/backoffice/logs/out.log',
     error_file: '/var/www/backoffice/logs/error.log',
 
