@@ -31,6 +31,7 @@ import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import darkTheme from '../styles/darkTheme'
 import lightTheme from '../styles/lightTheme'
+import CallPanel from './components/CallPanel'
 import menuItems from './components/dashboard/menuItems'
 
 // Definir interfaces para los tipos de menú
@@ -40,32 +41,36 @@ interface SubMenuItem {
   icon: React.ReactNode
 }
 
-interface MenuItem {
-  label: string
-  href?: string
-  icon: React.ReactNode
-  subItems?: SubMenuItem[]
-}
 
 const drawerWidth = 220
 const collapsedWidth = 60
 const transitionDuration = 300
 
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' && prop !== 'callPanelOpen' && prop !== 'callPanelMinimized' })<{
   open?: boolean
-}>(({ theme, open }) => ({
+  callPanelOpen?: boolean
+  callPanelMinimized?: boolean
+}>(({ theme, open, callPanelOpen, callPanelMinimized }) => ({
   flexGrow: 1,
-  transition: theme.transitions.create('margin', {
+  transition: theme.transitions.create(['margin', 'width', 'padding-right'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   marginLeft: `-${drawerWidth}px`,
+  paddingRight: 0,
   ...(open && {
     transition: theme.transitions.create('margin', {
       easing: theme.transitions.easing.easeOut,
       duration: theme.transitions.duration.enteringScreen,
     }),
     marginLeft: 0,
+  }),
+  ...(callPanelOpen && {
+    paddingRight: callPanelMinimized ? 60 : 320,
+    transition: theme.transitions.create('padding-right', {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
   }),
   paddingTop: theme.spacing(8),
   height: '100vh',
@@ -201,6 +206,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const [isCallPanelOpen, setIsCallPanelOpen] = useState(false)
+  const [isCallPanelMinimized, setIsCallPanelMinimized] = useState(false)
   const router = useRouter()
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost'
@@ -277,6 +284,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const toggleMenu = () => {
     setOpen(!open)
+  }
+
+  const toggleCallPanel = () => {
+    setIsCallPanelOpen(!isCallPanelOpen)
   }
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -369,7 +380,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </Badge>
             </IconButton>
 
-            <IconButton color="inherit">
+            <IconButton color="inherit" onClick={toggleCallPanel}>
               <CallIcon sx={{ mr: { xs: 0, sm: 1 } }} />
             </IconButton>
 
@@ -527,7 +538,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </List>
         </GradientDrawer>
 
-        <Main open={open}>{children}</Main>
+        <Main open={open} callPanelOpen={isCallPanelOpen} callPanelMinimized={isCallPanelMinimized}>
+          {children}
+        </Main>
+        <CallPanel
+          open={isCallPanelOpen}
+          onClose={() => setIsCallPanelOpen(false)}
+          isMinimized={isCallPanelMinimized}
+          onToggleMinimize={() => setIsCallPanelMinimized(!isCallPanelMinimized)}
+        />
       </Box>
     </ThemeProvider>
   )
