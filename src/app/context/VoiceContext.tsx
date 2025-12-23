@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { Device, Call } from '@twilio/voice-sdk';
 
 interface VoiceContextType {
@@ -18,51 +18,107 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   const [device, setDevice] = useState<Device | null>(null);
   const [currentCall, setCurrentCall] = useState<Call | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const initializing = useRef(false);
 
   const initDevice = useCallback(async (agentId: string) => {
-    if (device) return; 
+    if (typeof window === 'undefined' || device || initializing.current) return;
+
+    initializing.current = true;
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_VOICE_SERVICE_URL}/call/token?agentId=${agentId}`);
-      const token = await response.text();
+      
+      if (!response.ok) throw new Error('Error al obtener el token del servidor');
 
+      const data = await response.json();
+      
+      const token = typeof data === 'object' ? data.token : data;
+
+      if (!token || typeof token !== 'string') {
+        throw new Error('El formato del token recibido es inválido');
+      }
+
+      console.log('Token recibido y procesado correctamente');
+
+      // --- INICIALIZACIÓN DEL DISPOSITIVO ---
       const newDevice = new Device(token, {
         logLevel: 'debug',
-        codecPreferences: [Device.Codec.Opus, Device.Codec.PCMU],
+        codecPreferences: ['opus', 'pcmu'] as any,
+        enableIceRestart: true,
       });
 
+      // Eventos de registro
       newDevice.on('registered', () => {
         setIsReady(true);
-        console.log('Twilio Device Registered');
+        console.log(' Twilio Device registrado para el agente:', agentId);
       });
 
-      newDevice.on('error', (error) => {
-        console.error('Twilio Device Error:', error);
+      newDevice.on('unregistered', () => {
+        setIsReady(false);
+        console.log(' Twilio Device desconectado');
       });
 
-      await newDevice.register();
+      newDevice.on('error', (twError) => {
+        console.error(' Twilio Error:', twError.message, twError.code);
+        if (twError.code === 31204 || twError.code === 31205) {
+          setIsReady(false);
+        }
+      });
+
+      // Registrar el dispositivo
+      newDevice.register();
       setDevice(newDevice);
+
     } catch (err) {
       console.error('Failed to init Twilio:', err);
+    } finally {
+      initializing.current = false;
     }
   }, [device]);
 
   const makeCall = useCallback((number: string) => {
     if (device && isReady) {
-      const call = device.connect({ params: { To: number } });
-      
-      call.then((c) => {
-        setCurrentCall(c);
-        c.on('disconnect', () => setCurrentCall(null));
+      // Limpiar llamadas previas si existen
+      if (currentCall) currentCall.disconnect();
+
+      console.log(`Iniciando llamada a: ${number}`);
+      const callPromise = device.connect({ params: { To: number } });
+
+      Promise.resolve(callPromise).then((call) => {
+        setCurrentCall(call);
+
+        call.on('disconnect', () => {
+          console.log('Llamada finalizada (disconnect)');
+          setCurrentCall(null);
+        });
+
+        call.on('reject', () => {
+          console.log('Llamada rechazada');
+          setCurrentCall(null);
+        });
+
+        call.on('error', (error) => {
+          console.error('Error en la llamada:', error);
+          setCurrentCall(null);
+        });
       });
     }
-  }, [device, isReady]);
+  }, [device, isReady, currentCall]);
 
   const hangup = useCallback(() => {
     if (device) {
       device.disconnectAll();
       setCurrentCall(null);
     }
+  }, [device]);
+
+  // Limpieza al desmontar
+  useEffect(() => {
+    return () => {
+      if (device) {
+        device.destroy();
+      }
+    };
   }, [device]);
 
   return (

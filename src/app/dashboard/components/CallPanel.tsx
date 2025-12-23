@@ -30,7 +30,8 @@ const CallPanel: React.FC<CallPanelProps> = ({ open, onClose, isMinimized, onTog
 
   // 1. Inicialización automática con el pkUser de localStorage
   useEffect(() => {
-    const pkUser = localStorage.getItem('pkUser')
+    const pkUser = localStorage.getItem('pkUser') || sessionStorage.getItem('pkUser');
+    console.log('pkUser en llamada '+pkUser) 
     if (pkUser && open) {
       initDevice(pkUser) // Registra al agente con su ID real
     }

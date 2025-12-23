@@ -87,13 +87,14 @@ const LoginPage = () => {
       storage.setItem('access_token', accessToken)
      // storage.setItem('pkUser', pkUser.toString())
       storage.setItem('user_roles', JSON.stringify(roles))
-
+      storage.setItem('pkUser', pkUser.toString())
+      console.log('pkUser en el login='+pkUser);
       // Obtener datos del usuario en segundo plano
       axios
         .get(`${baseUrl}:${port}/user/findOne/${pkUser}`)
         .then((userResponse) => {
           storage.setItem('user', JSON.stringify(userResponse.data))
-          storage.setItem('pkUser', pkUser.toString())
+
         })
         .catch((userError) => {
           console.warn('Failed to fetch user data:', userError)
