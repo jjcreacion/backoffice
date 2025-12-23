@@ -12,8 +12,7 @@ import PhoneInTalkIcon from '@mui/icons-material/PhoneInTalk'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 
-// Importamos nuestro hook de voz
-import { useVoice } from "@/context/VoiceContext"
+import { useVoice } from "../../context/VoiceContext"
 
 interface CallPanelProps {
   open: boolean
@@ -27,7 +26,6 @@ const CallPanel: React.FC<CallPanelProps> = ({ open, onClose, isMinimized, onTog
   const [inputNumber, setInputNumber] = useState('')
   const [callDuration, setCallDuration] = useState('00:00')
   
-  // Extraemos las funciones reales del contexto
   const { initDevice, makeCall, hangup, isReady, currentCall } = useVoice()
 
   // 1. Inicialización automática con el pkUser de localStorage
