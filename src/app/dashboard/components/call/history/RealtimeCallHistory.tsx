@@ -42,6 +42,15 @@ const getStatusStyles = (status: string) => {
     }
 };
 
+// Función para formatear segundos a minutos y segundos
+const formatDuration = (totalSeconds: number) => {
+    if (!totalSeconds || totalSeconds === 0) return '0s';
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes === 0) return `${seconds}s`;
+    return `${minutes}m ${seconds}s`;
+};
+
 export default function RealtimeCallHistory() {
     const [calls, setCalls] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -90,7 +99,7 @@ export default function RealtimeCallHistory() {
                                     primary={<Typography variant="body2" fontWeight="700" color="text.primary">{call.toNumber}</Typography>}
                                     secondary={
                                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                            {new Date(call.createdAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })} • {call.duration}s
+                                            {new Date(call.createdAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })} • {formatDuration(call.duration)}
                                         </Typography>
                                     }
                                 />

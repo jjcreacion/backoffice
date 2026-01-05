@@ -17,3 +17,12 @@
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
+
+audio::-webkit-media-controls-enclosure {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+}
+
+audio::-webkit-media-controls-panel {
+    padding: 0 10px;
+}

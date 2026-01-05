@@ -92,12 +92,28 @@ export default function FullCallHistoryPage() {
             headerName: 'Date & Time', 
             flex: 1.5,
             minWidth: 180,
-            // Corregido: Usamos params.row para asegurar que tome el valor del backend
-            renderCell: (params) => (
-                <Typography variant="body2">
-                    {params.row.createdAt ? new Date(params.row.createdAt).toLocaleString('en-US') : '-'}
-                </Typography>
-            )
+            renderCell: (params) => {
+                const dateValue = params.row.createdAt;
+                if (!dateValue) return <Typography variant="body2">-</Typography>;
+
+                const date = new Date(dateValue);
+
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    month: 'short',   
+                    day: 'numeric',   
+                    hour: '2-digit',  
+                    minute: '2-digit',
+                    hour12: true      
+                });
+
+                const formattedDate = formatter.format(date);
+
+                return (
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                        {formattedDate}
+                    </Typography>
+                );
+            }
         },
         { field: 'fromNumber', headerName: 'From', flex: 1, minWidth: 140 },
         { field: 'toNumber', headerName: 'To', flex: 1, minWidth: 140 },
@@ -129,12 +145,42 @@ export default function FullCallHistoryPage() {
             headerName: 'Duration', 
             flex: 1,
             minWidth: 110,
-            // Corregido: Formato de minutos y segundos
             renderCell: (params) => (
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {formatDuration(params.row.duration)}
                 </Typography>
             )
+        },
+        { 
+        field: 'recording', 
+        headerName: 'Audio Recording', 
+        flex: 1.5,
+        minWidth: 250,
+        sortable: false,
+        renderCell: (params) => {
+            const recordingUrl = params.row.recordings?.[0]?.recordingUrl || params.row.recordingUrl;
+
+            if (!recordingUrl) {
+                return <Typography variant="caption" color="text.disabled">No recording</Typography>;
+            }
+
+            return (
+                <Box sx={{ width: '100%', pr: 2 }}>
+                    <audio 
+                        controls 
+                        style={{ 
+                            height: '30px', 
+                            width: '100%', 
+                            borderRadius: '8px',
+                            filter: 'contrast(0.9) opacity(0.8)'
+                        }}
+                    >
+                        <source src={recordingUrl} type="audio/mpeg" />
+                        Your browser does not support the audio element.
+                    </audio>
+                </Box>
+            );
+         }
         },
         { field: 'agentId', headerName: 'Agent ID', flex: 0.8, minWidth: 100 },
     ];
