@@ -91,7 +91,7 @@ export default function FullCallHistoryPage() {
             field: 'createdAt', 
             headerName: 'Date & Time', 
             flex: 1.5,
-            minWidth: 180,
+            minWidth: 120,
             renderCell: (params) => {
                 const dateValue = params.row.createdAt;
                 if (!dateValue) return <Typography variant="body2">-</Typography>;
@@ -115,8 +115,8 @@ export default function FullCallHistoryPage() {
                 );
             }
         },
-        { field: 'fromNumber', headerName: 'From', flex: 1, minWidth: 140 },
-        { field: 'toNumber', headerName: 'To', flex: 1, minWidth: 140 },
+        { field: 'fromNumber', headerName: 'From', flex: 1, minWidth: 130 },
+        { field: 'toNumber', headerName: 'To', flex: 1, minWidth: 130 },
         { 
             field: 'status', 
             headerName: 'Status', 
@@ -144,7 +144,7 @@ export default function FullCallHistoryPage() {
             field: 'duration', 
             headerName: 'Duration', 
             flex: 1,
-            minWidth: 110,
+            minWidth: 90,
             renderCell: (params) => (
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     {formatDuration(params.row.duration)}
@@ -155,7 +155,7 @@ export default function FullCallHistoryPage() {
         field: 'recording', 
         headerName: 'Audio Recording', 
         flex: 1.5,
-        minWidth: 250,
+        minWidth: 350,
         sortable: false,
         renderCell: (params) => {
             const recordingUrl = params.row.recordings?.[0]?.recordingUrl || params.row.recordingUrl;
@@ -182,7 +182,6 @@ export default function FullCallHistoryPage() {
             );
          }
         },
-        { field: 'agentId', headerName: 'Agent ID', flex: 0.8, minWidth: 100 },
     ];
 
     return (
